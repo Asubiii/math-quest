@@ -38,7 +38,7 @@ The sheet gets four tabs: **Summary** (ranks, most-missed questions, mistake typ
 
 ## Development
 
-No build step. Serve the folder with any static server, for example `python3 -m http.server`. Run `npm test` to fuzz-test the question generators.
+No build step. Run `python3 scripts/bump.py` before each push so browsers pick up every changed file at once. Serve the folder with any static server, for example `python3 -m http.server`. Run `npm test` to fuzz-test the question generators.
 
 ## Credits
 
