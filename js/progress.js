@@ -2,11 +2,11 @@
 // missed questions to retry, and which monsters have been beaten in which skill.
 
 export const GOALS = [8, 7, 6, 5, 4.5, 4, 3.5, 3, 2.5, 2];           // seconds per answer, rank 1..10
-export const GOAL_SCALE = { compare: 1, frac2dec: 1, pct: 1, mixed: 2.5 }; // ordering three values takes longer
+export const GOAL_SCALE = { compare: 1, frac2dec: 1, pct: 1, mixed: 1 };
 export const MAX_RANK = GOALS.length;
 export const goalFor = (skill, rank) => GOALS[Math.min(rank, MAX_RANK) - 1] * GOAL_SCALE[skill];
 export const baseDamage = rank => 10 + 3 * (Math.min(rank, MAX_RANK) - 1);
-export const MIXED_UNLOCK = 3; // rank needed in each of the other three skills
+export const MIXED_UNLOCK = 1; // rank needed in each of the other three skills (1 = always open)
 
 const KEY = 'math-quest-save-v1';
 const blank = () => ({
@@ -21,6 +21,7 @@ const blank = () => ({
 
 let save = blank();
 try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.ranks) save = { ...blank(), ...s, retry: { ...blank().retry, ...(s.retry || {}) } }; } catch { /* storage unavailable: play without saving */ }
+if ((save.v || 1) < 2) { save.retry = blank().retry; save.v = 2; } // question formats changed in v2: drop old saved questions
 export const state = () => save;
 export function persist() { try { localStorage.setItem(KEY, JSON.stringify(save)); } catch { /* ignore */ } }
 export function resetAll() { const name = save.name; save = blank(); save.name = name; persist(); }

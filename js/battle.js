@@ -3,16 +3,16 @@
 // layout works from phones to desktops.
 
 export const MONSTERS = [
-  { id: 'duwende', name: 'Duwende', blurb: 'A tiny house spirit who hides in anthills and old trees.' },
-  { id: 'santelmo', name: 'Santelmo', blurb: 'A floating ball of fire seen over fields and seas at night.' },
-  { id: 'siyokoy', name: 'Siyokoy', blurb: 'A scaly sea creature with webbed hands and fins.' },
-  { id: 'tigmamanukan', name: 'Tigmamanukan', blurb: 'An omen bird whose flight was said to foretell a journey’s luck.' },
-  { id: 'alan', name: 'Alan', blurb: 'A winged forest spirit whose fingers and toes point backward.' },
-  { id: 'sigbin', name: 'Sigbin', blurb: 'A shadowy beast that walks backward with its head low.' },
-  { id: 'amomongo', name: 'Amomongo', blurb: 'A hairy, long-clawed creature of the mountain caves.' },
-  { id: 'bungisngis', name: 'Bungisngis', blurb: 'A one-eyed giant who can’t stop laughing.' },
-  { id: 'wakwak', name: 'Wakwak', blurb: 'A night bird named for the sound of its flapping wings.' },
-  { id: 'berberoka', name: 'Berberoka', blurb: 'A swamp giant that can drink up a whole river. The final boss.' },
+  { id: 'duwende', name: 'Goblin', blurb: 'A sneaky miner who guards its gold with a pickaxe.' },
+  { id: 'santelmo', name: 'Wisp', blurb: 'A floating blue flame that drifts through the dark.' },
+  { id: 'siyokoy', name: 'Swamp Troll', blurb: 'A tusked brute covered in weeds and scales.' },
+  { id: 'tigmamanukan', name: 'Stormbird', blurb: 'A swift blue bird that strikes like lightning.' },
+  { id: 'alan', name: 'Harpy', blurb: 'A winged creature with long claws and a nasty screech.' },
+  { id: 'sigbin', name: 'Hellhound', blurb: 'A lean, fiery beast that hunts at night.' },
+  { id: 'amomongo', name: 'Yeti', blurb: 'A huge, shaggy beast with fists like boulders.' },
+  { id: 'bungisngis', name: 'Cyclops', blurb: 'A one-eyed giant with a very big grin.' },
+  { id: 'wakwak', name: 'Shadow Raven', blurb: 'A giant raven with glowing red eyes.' },
+  { id: 'berberoka', name: 'Bog King', blurb: 'The ancient ruler of the swamp. The final boss.' },
 ];
 
 export const BACKDROPS = {

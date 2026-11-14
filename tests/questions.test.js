@@ -6,7 +6,7 @@ for (const skill of ['compare', 'frac2dec', 'pct', 'mixed'])
   for (let rank = 1; rank <= 10; rank++)
     for (let i = 0; i < 1500; i++) {
       const q = makeQuestion(skill, rank, mem);
-      const want = skill === 'compare' ? 3 : 4;
+      const want = skill === 'compare' || skill === 'mixed' ? 2 : 4;
       const texts = q.choices.map(c => c.text);
       const fail = q.choices.filter(c => c.correct).length !== 1 ? 'correct!=1'
         : q.choices.length !== want ? 'count' : new Set(texts).size !== texts.length ? 'dupe'

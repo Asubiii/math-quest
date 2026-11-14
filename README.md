@@ -9,7 +9,7 @@ Play: https://asubiii.github.io/math-quest/
 - **Decimals ↔ Percents** (Coast Path)
 - **Fractions → Decimals** (Hush Cave)
 - **Fraction Face-Off**: which fraction is bigger (Woodland Trail)
-- **Mixed Showdown**: order fractions, decimals and percents (Cliff Summit, unlocks at Speed Rank 3 in the other three)
+- **Decimal Face-Off**: which decimal (or percent) is bigger (Cliff Summit)
 
 ## How fights work
 

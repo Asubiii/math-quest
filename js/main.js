@@ -200,7 +200,7 @@ document.addEventListener('keydown', e => {
   if (!$('#intro').hidden && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); $('#fight-go').click(); return; }
   if (!F || !F.q || $('#qpanel').hidden) return;
   let i = { 1: 0, 2: 1, 3: 2, 4: 3 }[e.key];
-  if (F.q.layout === 'row3') i = { ArrowLeft: 0, '=': 1, ArrowRight: 2 }[e.key] ?? i;
+  if (F.q.layout === 'row2') i = { ArrowLeft: 0, ArrowRight: 1 }[e.key] ?? i;
   if (i !== undefined && i < F.q.choices.length) answer(i);
 });
 

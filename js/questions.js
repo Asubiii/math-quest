@@ -8,7 +8,7 @@ export const SKILLS = {
   compare: { name: 'Fraction Face-Off', short: 'Compare fractions', area: 'Woodland Trail' },
   frac2dec: { name: 'Fractions → Decimals', short: 'Fraction to decimal', area: 'Hush Cave' },
   pct: { name: 'Decimals ↔ Percents', short: 'Decimal and percent', area: 'Coast Path' },
-  mixed: { name: 'Mixed Showdown', short: 'Order mixed numbers', area: 'Cliff Summit' },
+  mixed: { name: 'Decimal Face-Off', short: 'Compare decimals', area: 'Cliff Summit' },
 };
 
 // ---------- Fact pools (fractions to memorize), by tier ----------
@@ -50,17 +50,6 @@ function digitsDec(r) {
   const s = `${whole}.${n}${r.d}`;
   return { html: s, text: s, tag: 'digits (wrote 3/8 as 0.38)' };
 }
-function neighbors(r) {
-  const whole = Math.floor(r.n / r.d), n = r.n - whole * r.d, d = r.d, w = x => R(x.n + whole * x.d, x.d);
-  const out = [];
-  if (n > 0) {
-    out.push(w(R(n, d + 1)));
-    if (d - 1 > n) out.push(w(R(n, d - 1)));
-    if (n + 1 < d) out.push(w(R(n + 1, d)));
-    if (n - 1 > 0) out.push(w(R(n - 1, d)));
-  }
-  return out.filter(x => !eq(x, r));
-}
 const complement = r => (r.n < r.d && r.d - r.n !== r.n ? R(r.d - r.n, r.d) : null);
 
 // ---------- Tips (one-line fast way, shown after a miss) ----------
@@ -76,6 +65,8 @@ function fracTip(r) {
 const pctTip = r => `${decStr(r)} = ${pctStr(r)} · move the decimal point 2 places`;
 
 // ---------- Skill: fraction -> decimal (and back) ----------
+// Wrong answers are kept simple: the "digits" mistake, the look-alike fraction, and the nearest common values.
+const nearest = (r, list, n) => list.filter(x => !eq(x, r)).sort((a, b) => Math.abs(val(a) - val(r)) - Math.abs(val(b) - val(r))).slice(0, n);
 function frac2dec(rank, mem) {
   const tier = tierFor(rank);
   const items = FRAC_POOL.filter(i => i.tier <= tier);
@@ -84,16 +75,14 @@ function frac2dec(rank, mem) {
   const k = mem.pickKey(keys);
   const [dir, fk] = k.split(':');
   const [n, d] = fk.split('/').map(Number), r = R(n, d);
+  const pool = items.map(i => i.r).filter(x => (val(x) > 1) === (val(r) > 1));
   if (dir === 'f2d') {
-    const trunc = !terminates(r) && r.n < r.d && decStr(r).match(/^0\.(\d)\1\1…$/) ? R(Number(decStr(r)[2]), 10) : null;
     const cands = prioritize(digitsDec(r), [
       decC(complement(r), 'mixed up with a similar fraction'),
-      ...shuffle(neighbors(r)).slice(0, 2).map(x => decC(x, 'close but wrong fraction')),
-      decC(R(r.n, r.d * 10), 'decimal point'), decC(mul(r, 10), 'decimal point'),
-      decC(trunc, 'cut off a repeating decimal'),
-    ]);
+      ...nearest(r, pool, 4).map(x => decC(x, 'close but wrong value')),
+    ], 0.6);
     return {
-      skill: 'frac2dec', key: k, prompt: fracHTML(r), promptText: `${fracText(r)} = ?`, ask: 'As a decimal?',
+      skill: 'frac2dec', key: k, prompt: fracHTML(r), promptText: `${fracText(r)} = ?`, ask: 'What is this as a decimal?',
       choices: shuffle(choiceSet({ html: decStr(r), text: decStr(r) }, cands)), layout: 'grid', tip: fracTip(r),
     };
   }
@@ -105,50 +94,48 @@ function frac2dec(rank, mem) {
     if (ds.length === 1 && Number(ds) > 1) digitMistake = R(1, Number(ds));
     else if (ds.length === 2 && Number(ds[0]) > 0 && Number(ds[0]) < Number(ds[1])) digitMistake = R(Number(ds[0]), Number(ds[1]));
   }
-  const near = items.map(i => i.r).filter(x => !eq(x, r)).sort((a, b) => Math.abs(val(a) - val(r)) - Math.abs(val(b) - val(r))).slice(0, 3);
   const cands = prioritize(fracC(digitMistake, 'digits (read 0.4 as 1/4)'), [
-    ...near.map(x => fracC(x, 'close but wrong fraction')), fracC(complement(r), 'mixed up with a similar fraction'),
-  ]);
+    ...nearest(r, pool, 4).map(x => fracC(x, 'close but wrong value')), fracC(complement(r), 'mixed up with a similar fraction'),
+  ], 0.6);
   return {
-    skill: 'frac2dec', key: k, prompt: s, promptText: `${s} = ?`, ask: 'As a fraction?',
+    skill: 'frac2dec', key: k, prompt: s, promptText: `${s} = ?`, ask: 'What is this as a fraction?',
     choices: shuffle(choiceSet({ html: fracHTML(r), text: fracText(r) }, cands)), layout: 'grid', tip: fracTip(r),
   };
 }
 
 // ---------- Skill: decimal <-> percent (and fraction -> percent) ----------
+// The wrong answers are the same digits with the decimal point in a different place.
 function pct(rank, mem) {
   const tier = tierFor(rank);
   const items = PCT_POOL.filter(i => i.tier <= tier);
   const keys = items.flatMap(i => {
-    const ks = [`d2p:${key(i.r)}`, `p2d:${key(i.r)}`];
-    if (rank >= 3 && i.r.d <= 40 && i.r.d !== 1) ks.push(`f2p:${key(i.r)}`);
+    const ks = terminates(i.r) ? [`d2p:${key(i.r)}`, `p2d:${key(i.r)}`] : [];
+    if ((rank >= 3 || !ks.length) && i.r.d <= 40 && i.r.n < i.r.d) ks.push(`f2p:${key(i.r)}`);
     return ks;
   });
   const k = mem.pickKey(keys);
   const [dir, fk] = k.split(':');
   const [n, d] = fk.split('/').map(Number), r = R(n, d);
-  const shifts = (fn, tagSmall, tagBig) => [fn(mul(r, 10), 'decimal point (1 place off)'), fn(R(r.n, r.d * 10), 'decimal point (1 place off)'),
-    fn(R(r.n, r.d * 100), tagSmall), fn(mul(r, 100), tagBig)];
   if (dir === 'd2p') {
-    const [a, b, small, big] = shifts(pctC, 'just added % sign', 'decimal point (2 places off)');
+    const cands = [pctC(R(r.n, r.d * 100), 'just added % sign'), pctC(mul(r, 10), 'decimal point (1 place off)'), pctC(R(r.n, r.d * 10), 'decimal point (1 place off)')];
     return {
-      skill: 'pct', key: k, prompt: decStr(r), promptText: `${decStr(r)} = ?%`, ask: 'As a percent?',
-      choices: shuffle(choiceSet(pctC(r), prioritize(small, [a, b, big]))), layout: 'grid', tip: pctTip(r),
+      skill: 'pct', key: k, prompt: decStr(r), promptText: `${decStr(r)} = ?%`, ask: 'What is this as a percent?',
+      choices: shuffle(choiceSet(pctC(r), cands)), layout: 'grid', tip: pctTip(r),
     };
   }
   if (dir === 'p2d') {
-    const [a, b, small, big] = shifts(decC, 'decimal point (2 places off)', 'just dropped % sign');
+    const cands = [decC(mul(r, 100), 'just dropped % sign'), decC(mul(r, 10), 'decimal point (1 place off)'), decC(R(r.n, r.d * 10), 'decimal point (1 place off)')];
     return {
-      skill: 'pct', key: k, prompt: pctStr(r), promptText: `${pctStr(r)} = ?`, ask: 'As a decimal?',
-      choices: shuffle(choiceSet({ html: decStr(r), text: decStr(r) }, prioritize(big, [a, b, small]))), layout: 'grid', tip: pctTip(r),
+      skill: 'pct', key: k, prompt: pctStr(r), promptText: `${pctStr(r)} = ?`, ask: 'What is this as a decimal?',
+      choices: shuffle(choiceSet({ html: decStr(r), text: decStr(r) }, cands)), layout: 'grid', tip: pctTip(r),
     };
   }
   // fraction -> percent
   const dig = r.d < 10 && r.n < r.d ? { html: `${r.n}${r.d}%`, text: `${r.n}${r.d}%`, tag: 'digits (wrote 3/8 as 38%)' } : null;
-  const cands = prioritize(dig, [...shuffle(neighbors(r)).slice(0, 2).map(x => pctC(x, 'close but wrong fraction')),
-    pctC(complement(r), 'mixed up with a similar fraction'), pctC(mul(r, 10), 'decimal point'), pctC(R(r.n, r.d * 10), 'decimal point')]);
+  const pool = FRAC_POOL.filter(i => i.tier <= tier).map(i => i.r).filter(x => pctStr(x) && (val(x) > 1) === (val(r) > 1) && (terminates(mul(x, 100)) || !terminates(mul(r, 100))));
+  const cands = prioritize(dig, [...nearest(r, pool, 4).map(x => pctC(x, 'close but wrong value')), pctC(complement(r), 'mixed up with a similar fraction')], 0.6);
   return {
-    skill: 'pct', key: k, prompt: fracHTML(r), promptText: `${fracText(r)} = ?%`, ask: 'As a percent?',
+    skill: 'pct', key: k, prompt: fracHTML(r), promptText: `${fracText(r)} = ?%`, ask: 'What is this as a percent?',
     choices: shuffle(choiceSet(pctC(r), cands)), layout: 'grid', tip: `${fracHTML(r)} = ${decStr(r)} = ${pctStr(r)}`,
   };
 }
@@ -181,7 +168,7 @@ function comparePair(type) {
 }
 function compare(rank) {
   const types = rank <= 2 ? ['sameDen', 'sameNum', 'sameNum'] : rank <= 5 ? ['sameDen', 'sameNum', 'half', 'half', 'missing', 'missing', 'close'] : ['half', 'missing', 'close', 'close', 'close'];
-  const type = Math.random() < 0.12 ? 'equal' : pick(types);
+  const type = pick(types);
   const [a, b] = comparePair(type), c = cmp(a, b);
   const fh = x => `<span class="frac"><span>${x.n}</span><span>${x.d}</span></span>`, ft = x => `${x.n}/${x.d}`;
   const big = c > 0 ? a : b, small = c > 0 ? b : a;
@@ -195,68 +182,45 @@ function compare(rank) {
   }[type];
   const wrongTag = { sameDen: 'picked smaller top', sameNum: 'thought bigger bottom = bigger', half: 'missed the ½ benchmark', missing: 'missed "closer to 1"', close: 'close pair', equal: 'missed equal fractions' }[type];
   const choices = [
-    { html: fh(a), text: ft(a), correct: c > 0, tag: c === 0 ? 'missed equal fractions' : wrongTag },
-    { html: '=', text: '=', correct: c === 0, tag: 'thought they were equal' },
-    { html: fh(b), text: ft(b), correct: c < 0, tag: c === 0 ? 'missed equal fractions' : wrongTag },
+    { html: fh(a), text: ft(a), correct: c > 0, tag: wrongTag },
+    { html: fh(b), text: ft(b), correct: c < 0, tag: wrongTag },
   ];
   return {
     skill: 'compare', key: `cmp:${type}:${ft(a)}|${ft(b)}`, prompt: '',
-    promptText: `${ft(a)} vs ${ft(b)}`, ask: 'Which is bigger?', choices, layout: 'row3', tip,
+    promptText: `${ft(a)} vs ${ft(b)}`, ask: 'Which fraction is bigger?', choices, layout: 'row2', tip,
   };
 }
 
-// ---------- Skill: mixed formats (order / greatest / least) ----------
-const MIX_POOL = FRAC_POOL.map(i => i.r).concat(PCT_POOL.map(i => i.r)).filter((r, i, a) => val(r) <= 1.5 && a.findIndex(x => eq(x, r)) === i);
-function showAs(r, fmt) {
-  if (fmt === 'pct' && pctStr(r)) return { html: pctStr(r), text: pctStr(r) };
-  if (fmt === 'dec' || (fmt === 'pct' && !pctStr(r))) return { html: decStr(r), text: decStr(r) };
-  return { html: fracHTML(r), text: fracText(r) };
-}
-function pickClose(count, rank) {
-  const [gap, range] = rank <= 3 ? [0.1, 1.5] : rank <= 6 ? [0.04, 0.4] : [0.01, 0.25];
-  for (let t = 0; t < 400; t++) {
-    const set = shuffle(MIX_POOL).slice(0, count).sort((a, b) => val(a) - val(b));
-    const vs = set.map(val);
-    if (vs[vs.length - 1] - vs[0] > range) continue;
-    if (vs.some((v, i) => i && v - vs[i - 1] < gap)) continue;
-    return shuffle(set);
-  }
-  return shuffle(MIX_POOL).slice(0, count);
-}
+// ---------- Skill: compare two decimals (or two percents). Both values are always the same type. ----------
 function mixed(rank) {
-  const fmts = ['frac', 'dec', 'pct'];
-  const type = pick(['order', 'order', 'greatest', 'least']);
-  const count = type === 'order' ? 3 : 4;
-  const vals = pickClose(count, rank);
-  let fs = shuffle([...fmts, ...fmts]).slice(0, count);
-  if (new Set(fs).size < 2) fs = ['frac', 'dec', 'pct', 'dec'].slice(0, count);
-  const shown = vals.map((r, i) => ({ r, ...showAs(r, fs[i]) }));
-  const tip = shown.map(s => `${s.html} = ${decStr(s.r)}`).join(' · ');
-  const keyStr = `mix:${type}:${shown.map(s => s.text).join('|')}`;
-  if (type === 'order') {
-    const sorted = shown.slice().sort((a, b) => cmp(a.r, b.r));
-    const perms = [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 1, 0]];
-    const opts = [perms[0], ...shuffle(perms.slice(1)).slice(0, 3)].map((p, i) => ({
-      html: p.map(j => sorted[j].html).join('<span class="lt">&lt;</span>'), text: p.map(j => sorted[j].text).join(' < '),
-      correct: i === 0, tag: 'wrong order',
-    }));
-    return {
-      skill: 'mixed', key: keyStr, prompt: shown.map(s => s.html).join('<span class="comma">,</span>'),
-      promptText: `Order: ${shown.map(s => s.text).join(', ')}`, ask: 'Least to greatest?', choices: shuffle(opts), layout: 'list', tip,
-    };
+  const maxLen = rank <= 2 ? 2 : 3;
+  let a, b, la, lb;
+  for (let t = 0; t < 300; t++) {
+    la = between(1, maxLen); lb = between(1, maxLen);
+    const mk = l => { let n; do { n = between(1, 10 ** l - 1); } while (n % 10 === 0); return n; };
+    const na = mk(la), nb = mk(lb);
+    a = R(na, 10 ** la); b = R(nb, 10 ** lb);
+    if (eq(a, b)) continue;
+    if (la === lb && Math.random() < 0.7) continue;                       // mostly different lengths: that is the trap
+    if (rank >= 5 && Math.floor(val(a) * 10) !== Math.floor(val(b) * 10)) continue; // close pairs: same tenths digit
+    break;
   }
-  const target = shown.slice().sort((a, b) => (type === 'greatest' ? cmp(b.r, a.r) : cmp(a.r, b.r)))[0];
+  const asPct = rank >= 3 && Math.random() < 0.25;
+  const show = r => (asPct ? pctStr(r) : decStr(r));
+  const c = cmp(a, b), places = Math.max(la, lb);
+  const pad = r => val(r).toFixed(places);
+  const tag = x => (decStr(x).length > decStr(c > 0 ? a : b).length ? 'thought more digits = bigger' : 'decimal place value');
   return {
-    skill: 'mixed', key: keyStr, prompt: '', promptText: `Which is ${type}: ${shown.map(s => s.text).join(', ')}`,
-    ask: type === 'greatest' ? 'Which is the <b>greatest</b>?' : 'Which is the <b>least</b>?',
-    choices: shown.map(s => ({ html: s.html, text: s.text, correct: s === target, tag: type === 'greatest' ? 'picked a smaller one' : 'picked a bigger one' })),
-    layout: 'grid', tip,
+    skill: 'mixed', key: `dec:${asPct ? 'pct' : 'dec'}:${show(a)}|${show(b)}`, prompt: '',
+    promptText: `${show(a)} vs ${show(b)}`, ask: asPct ? 'Which percent is bigger?' : 'Which decimal is bigger?',
+    choices: [{ html: show(a), text: show(a), correct: c > 0, tag: tag(a) }, { html: show(b), text: show(b), correct: c < 0, tag: tag(b) }],
+    layout: 'row2', tip: `Line up the places: ${pad(a)} vs ${pad(b)}`,
   };
 }
 
 const GEN = { compare, frac2dec, pct, mixed };
 export function makeQuestion(skill, rank, mem) {
   const retry = mem.takeRetry(skill);
-  if (retry) return { ...retry, choices: retry.layout === 'row3' ? retry.choices : shuffle(retry.choices), retry: true };
+  if (retry) return { ...retry, choices: retry.layout === 'row2' ? retry.choices : shuffle(retry.choices), retry: true };
   return GEN[skill](rank, mem);
 }
