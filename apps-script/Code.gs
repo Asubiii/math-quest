@@ -9,7 +9,7 @@
 const SHEETS = {
   Fights: ['Time', 'Player', 'Skill', 'Speed rank', 'Goal (s)', 'Monster', 'Result', 'Questions', 'Correct', 'On time', 'Criticals',
     'Accuracy', 'Median (s)', 'Average (s)', 'Best combo', 'Rank after', 'Ranked up', 'Fight length (s)', 'Free play', 'Device'],
-  Answers: ['Time', 'Player', 'Skill', 'Speed rank', 'Question', 'Correct answer', 'Her answer', 'Result', 'Mistake type', 'Seconds', 'Goal (s)'],
+  Answers: ['Time', 'Player', 'Question type', 'Speed rank', 'Question', 'Correct answer', 'Her answer', 'Result', 'Mistake type', 'Seconds', 'Goal (s)'],
   Ranks: ['Player', 'Skill', 'Speed rank', 'Goal (s)', 'Last played', 'Fights', 'Last rank-up'],
 };
 
@@ -54,7 +54,7 @@ function doPost(e) {
     ss.getSheetByName('Fights').appendRow([when, player, clean(r.skill), r.rank, r.goal, clean(r.monster), clean(r.result), r.questions, r.correct, r.onTime, r.crits,
       acc, r.medianSec, r.avgSec, r.bestCombo, r.rankAfter, r.rankedUp ? 'yes' : '', r.seconds, r.freePlay ? 'yes' : '', clean(r.device)]);
     const fights = ss.getSheetByName('Fights'); fights.getRange(fights.getLastRow(), 12).setNumberFormat('0%');
-    const rows = (r.answers || []).slice(0, 80).map(a => [when, player, clean(r.skill), r.rank, clean(a.q), clean(a.answer), clean(a.chosen), clean(a.result), clean(a.mistake || ''), a.sec, r.goal]);
+    const rows = (r.answers || []).slice(0, 80).map(a => [when, player, clean(a.type || r.skill), r.rank, clean(a.q), clean(a.answer), clean(a.chosen), clean(a.result), clean(a.mistake || ''), a.sec, a.goal || r.goal]);
     if (rows.length) { const sh = ss.getSheetByName('Answers'); sh.getRange(sh.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows); }
     // One row per player and skill with the latest rank.
     const ranks = ss.getSheetByName('Ranks'), data = ranks.getDataRange().getValues();

@@ -4,20 +4,22 @@ A mental-math battle game for fractions, decimals and percents. Every question i
 
 Play: https://asubiii.github.io/math-quest/
 
-## Skills
+## What it covers
 
-- **Fraction Face-Off**: which of two fractions with different denominators is bigger (Woodland Trail)
-- **Fractions → Decimals** (Hush Cave)
-- **Decimals → Percents** (Coast Path)
-- **Angle Hunt**: complementary, supplementary and vertical angles, triangle angle sums, right and isosceles triangles, exterior angles, parallel lines (Cliff Summit)
+One game mode mixes four kinds of question, with numbers generated fresh each time so answers can't be memorized:
+
+- **Compare fractions**: which of two fractions with different denominators is bigger
+- **Fraction to decimal**
+- **Decimal to percent** (fewer of these)
+- **Missing angles**: complementary, supplementary and vertical angles, triangle angle sums, right and isosceles triangles, exterior angles, parallel lines
 
 ## How fights work
 
 - Answer before the timer bar runs out to hit. Answer in the first half for a critical hit (2× damage).
 - A wrong answer or an empty timer costs a heart. Five hearts per fight.
 - Every 5 right in a row adds +25% damage.
-- Ten Speed Ranks per skill. The time goal drops from 60 seconds to 6 seconds per answer.
-- Missed and slow facts come back more often.
+- Ten Speed Ranks. The time goal drops from 60 seconds to 6 seconds per answer.
+- Missed and slow questions come back later, and weak question families come up more often.
 
 Progress is saved in the browser on the device used to play.
 

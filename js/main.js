@@ -1,12 +1,12 @@
 // Screens and the fight loop.
-import { SKILLS, makeQuestion } from './questions.js';
-import { state, persist, goalFor, baseDamage, MAX_RANK, MIXED_UNLOCK, mixedUnlocked, memoryFor, recordAnswer, awardStar } from './progress.js';
+import { SKILLS, makeQuestion, pickType } from './questions.js';
+import { state, persist, goalFor, baseDamage, MAX_RANK, memoryFor, recordAnswer, awardStar } from './progress.js';
 import { Scene, MONSTERS, BACKDROPS, bgUrl, loadManifest, paintMonster } from './battle.js';
 import { queueReport, flush } from './report.js';
 import { sfx, unlock, isMuted, setMuted } from './sfx.js';
 
 const $ = s => document.querySelector(s);
-const SKILL_ORDER = ['compare', 'frac2dec', 'pct', 'angles'];
+const MODE = 'all', SKILL_ORDER = [MODE]; // one game mode that mixes every question type
 const HEARTS = 5, HITS_TO_WIN = 16;
 const fmt = s => s.toFixed(1) + 's';
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -42,7 +42,7 @@ async function map() {
   const s = state();
   $('#hello').textContent = `Hi, ${s.name}!`;
   const stars = Object.values(s.stars).reduce((a, b) => a + b.filter(k => SKILL_ORDER.includes(k)).length, 0);
-  $('#star-count').textContent = `${stars}/40`;
+  $('#star-count').textContent = `${stars}/10`;
   const wrap = $('#areas'); wrap.innerHTML = '';
   for (const skill of SKILL_ORDER) {
     const rank = s.ranks[skill], locked = false, mastered = s.mastered?.[skill];
@@ -52,11 +52,11 @@ async function map() {
     card.innerHTML = `
       <div class="area-art"><div class="portrait"></div></div>
       <div class="area-info">
-        <div class="area-place">${SKILLS[skill].area}</div>
-        <div class="area-name">${SKILLS[skill].name}</div>
-        <div class="area-rank">${mastered ? 'Mastered! Free play' : `Speed Rank ${rank} · goal ${fmt(goalFor(skill, rank))}`}</div>
+        <div class="area-place">Fractions · Decimals · Percents · Angles</div>
+        <div class="area-name">${mastered ? 'Free play' : `Fight the ${mon.name}`}</div>
+        <div class="area-rank">${mastered ? 'Mastered! Free play' : `Speed Rank ${rank} · ${fmt(goalFor(skill, rank))} per answer`}</div>
         <div class="pips">${Array.from({ length: MAX_RANK }, (_, i) => `<i class="${i < rank - 1 || mastered ? 'on' : i === rank - 1 ? 'now' : ''}"></i>`).join('')}</div>
-        <div class="area-next">${locked ? `🔒 Reach Speed Rank ${MIXED_UNLOCK} in the other three to unlock` : mastered ? `Fight any monster at ${fmt(goalFor(skill, MAX_RANK))}` : `Next: <b>${mon.name}</b>`}</div>
+        <div class="area-next">${mastered ? `Fight any monster at ${fmt(goalFor(skill, MAX_RANK))}` : 'Tap to start'}</div>
       </div>`;
     card.querySelector('.area-art').style.backgroundImage = `linear-gradient(rgba(24,22,20,.05), rgba(24,22,20,.45)), url(${bgUrl(BACKDROPS[skill][Math.min(rank, MAX_RANK) - 1])})`;
     paintMonster(card.querySelector('.portrait'), mon.id, 'battle_idle', 0, 96);
@@ -79,7 +79,7 @@ function bestiary() {
     const card = document.createElement('div');
     card.className = 'beast' + (got.length ? '' : ' unknown');
     card.innerHTML = `<div class="portrait"></div><div class="beast-name">${got.length ? m.name : '???'}</div>
-      <div class="beast-stars">${SKILL_ORDER.map(k => `<span class="${got.includes(k) ? 'on' : ''}" title="${SKILLS[k].name}">★</span>`).join('')}</div>
+      <div class="beast-stars"><span class="${got.length ? 'on' : ''}">★</span></div>
       <p>${got.length ? m.blurb : `Speed Rank ${i + 1} opponent`}</p>`;
     paintMonster(card.querySelector('.portrait'), m.id, 'battle_idle', 0, 88);
     grid.appendChild(card);
@@ -96,7 +96,7 @@ async function startFight(skill) {
   const mon = opponent(skill), goal = goalFor(skill, rank), base = baseDamage(rank);
   F = {
     skill, rank, mastered, mon, goal, base, hpMax: base * HITS_TO_WIN, hp: base * HITS_TO_WIN, hearts: HEARTS,
-    combo: 0, bestCombo: 0, log: [], times: [], crits: 0, recent: [], started: Date.now(), over: false,
+    combo: 0, bestCombo: 0, types: [], log: [], times: [], crits: 0, recent: [], started: Date.now(), over: false,
   };
   show('battle');
   await scene.setup(mon.id, BACKDROPS[skill][mastered ? Math.floor(Math.random() * 10) : rank - 1]);
@@ -107,7 +107,7 @@ async function startFight(skill) {
   $('#qpanel').hidden = true;
   const intro = $('#intro');
   intro.querySelector('h2').textContent = `${mon.name} blocks the path!`;
-  intro.querySelector('p').innerHTML = `Answer in under <b>${fmt(goal)}</b> to hit. Under <b>${fmt(goal / 2)}</b> is a <b>critical hit</b> for double damage.`;
+  intro.querySelector('p').innerHTML = `Answer before the bar runs out to hit (about <b>${fmt(goal)}</b>). Answer in the first half for a <b>critical hit</b> and double damage.`;
   intro.hidden = false;
   $('#fight-go').focus();
 }
@@ -126,7 +126,9 @@ const comboBonus = () => Math.min(1, Math.floor(F.combo / 5) * 0.25);
 
 function nextQuestion() {
   if (F.over) return;
-  const q = makeQuestion(F.skill, F.rank, memoryFor(F.recent));
+  const type = pickType(F.types); F.types.push(type);
+  const q = makeQuestion(type, F.rank, memoryFor(F.recent));
+  F.goal = goalFor(type, F.rank); $('#goal').textContent = fmt(F.goal);
   F.q = q; F.late = false; F.locked = false;
   F.recent.push(q.key); if (F.recent.length > 4) F.recent.shift();
   $('#ask').innerHTML = q.ask;
@@ -166,7 +168,7 @@ async function answer(i) {
   const q = F.q, c = q.choices[i], sec = (performance.now() - F.t0) / 1000;
   const buttons = [...document.querySelectorAll('#choices .choice')];
   const right = q.choices.find(x => x.correct);
-  const entry = { q: q.promptText, answer: right.text, chosen: c.text, sec: +sec.toFixed(2), late: F.late };
+  const entry = { type: SKILLS[q.skill].name, q: q.promptText, answer: right.text, chosen: c.text, sec: +sec.toFixed(2), goal: F.goal, late: F.late };
   if (c.correct) {
     const outcome = F.late ? 'late' : 'fast', crit = !F.late && sec <= F.goal / 2;
     buttons[i].classList.add('right');
@@ -230,8 +232,8 @@ async function endFight(won) {
 
   const allTimes = F.log.map(e => e.sec);
   queueReport({
-    player: s.name, device: s.device, time: new Date().toISOString(), skill: SKILLS[F.skill].name,
-    rank: rankBefore, goal: F.goal, monster: F.mon.name, result: won ? 'won' : 'lost', freePlay: F.mastered,
+    player: s.name, device: s.device, time: new Date().toISOString(), skill: 'All skills',
+    rank: rankBefore, goal: goalFor(MODE, rankBefore), monster: F.mon.name, result: won ? 'won' : 'lost', freePlay: F.mastered,
     questions: F.log.length, correct: correct.length, onTime: onTime.length, crits: F.crits,
     medianSec: +median(allTimes).toFixed(2), avgSec: allTimes.length ? +(allTimes.reduce((a, b) => a + b, 0) / allTimes.length).toFixed(2) : 0,
     bestCombo: F.bestCombo, rankAfter: s.ranks[F.skill], goalAfter: goalFor(F.skill, s.ranks[F.skill]), rankedUp, seconds: Math.round((Date.now() - F.started) / 1000),
@@ -248,11 +250,11 @@ async function endFight(won) {
   if (won && rankedUp) {
     headline = `${F.mon.name} defeated!`;
     sub = `<div class="rankup">Speed Rank up! ${rankBefore} → ${rankBefore + 1}</div>
-      <p>New goal: <b>${fmt(F.goal)} → ${fmt(goalFor(F.skill, rankBefore + 1))}</b> per answer · damage <b>${baseDamage(rankBefore)} → ${baseDamage(rankBefore + 1)}</b></p>
+      <p>New goal: <b>${fmt(goalFor(MODE, rankBefore))} → ${fmt(goalFor(MODE, rankBefore + 1))}</b> per answer · damage <b>${baseDamage(rankBefore)} → ${baseDamage(rankBefore + 1)}</b></p>
       <p>Next opponent: <b>${next.name}</b></p>`;
   } else if (won) {
     headline = `${F.mon.name} defeated!`;
-    sub = F.mastered ? '<p>Free play win. Keep that speed sharp!</p>' : `<div class="rankup">${SKILLS[F.skill].name} mastered!</div><p>You beat the final boss at ${fmt(F.goal)} per answer.</p>`;
+    sub = F.mastered ? '<p>Free play win. Keep that speed sharp!</p>' : `<div class="rankup">Math Quest mastered!</div><p>You beat the final boss at ${fmt(goalFor(MODE, MAX_RANK))} per answer.</p>`;
   } else {
     headline = `${F.mon.name} got away…`;
     const wrong = F.log.filter(e => e.result === 'wrong').length, slow = F.log.filter(e => e.late).length;
