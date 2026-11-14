@@ -5,7 +5,7 @@ import { Scene, MONSTERS, BACKDROPS, bgUrl, loadManifest, paintMonster } from '.
 import { queueReport, flush } from './report.js';
 
 const $ = s => document.querySelector(s);
-const SKILL_ORDER = ['pct', 'frac2dec', 'compare', 'mixed'];
+const SKILL_ORDER = ['compare', 'frac2dec', 'pct'];
 const HEARTS = 5, HITS_TO_WIN = 16;
 const fmt = s => s.toFixed(1) + 's';
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -40,8 +40,8 @@ async function map() {
   show('map');
   const s = state();
   $('#hello').textContent = `Hi, ${s.name}!`;
-  const stars = Object.values(s.stars).reduce((a, b) => a + b.length, 0);
-  $('#star-count').textContent = `${stars}/40`;
+  const stars = Object.values(s.stars).reduce((a, b) => a + b.filter(k => SKILL_ORDER.includes(k)).length, 0);
+  $('#star-count').textContent = `${stars}/30`;
   const wrap = $('#areas'); wrap.innerHTML = '';
   for (const skill of SKILL_ORDER) {
     const rank = s.ranks[skill], locked = skill === 'mixed' && !mixedUnlocked(), mastered = s.mastered?.[skill];

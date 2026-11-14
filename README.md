@@ -6,10 +6,9 @@ Play: https://asubiii.github.io/math-quest/
 
 ## Skills
 
-- **Decimals ↔ Percents** (Coast Path)
+- **Fraction Face-Off**: which of two fractions with different denominators is bigger (Woodland Trail)
 - **Fractions → Decimals** (Hush Cave)
-- **Fraction Face-Off**: which fraction is bigger (Woodland Trail)
-- **Decimal Face-Off**: which decimal (or percent) is bigger (Cliff Summit)
+- **Decimals → Percents** (Coast Path)
 
 ## How fights work
 

@@ -7,8 +7,7 @@ import { R, val, eq, cmp, mul, key, decStr, pctStr, fracHTML, fracText, terminat
 export const SKILLS = {
   compare: { name: 'Fraction Face-Off', short: 'Compare fractions', area: 'Woodland Trail' },
   frac2dec: { name: 'Fractions → Decimals', short: 'Fraction to decimal', area: 'Hush Cave' },
-  pct: { name: 'Decimals ↔ Percents', short: 'Decimal and percent', area: 'Coast Path' },
-  mixed: { name: 'Decimal Face-Off', short: 'Compare decimals', area: 'Cliff Summit' },
+  pct: { name: 'Decimals → Percents', short: 'Decimal to percent', area: 'Coast Path' },
 };
 
 // ---------- Fact pools (fractions to memorize), by tier ----------
@@ -23,7 +22,7 @@ const PCT_POOL = [
   ...[[1, 8], [3, 8], [2, 25], [3, 100], [9, 20], [3, 2], [5, 4], [2, 1], [1, 40], [7, 10]].map(([n, d]) => F(n, d, 2)),
   ...[[1, 200], [7, 8], [5, 8], [1, 3], [2, 3], [13, 10], [1, 50], [3, 40]].map(([n, d]) => F(n, d, 3)),
 ];
-const tierFor = rank => (rank <= 2 ? 1 : rank <= 4 ? 2 : 3);
+const tierFor = rank => (rank <= 2 ? 2 : 3); // thirds and eighths from the start; sixths, ninths and mixed numbers from rank 3
 
 // ---------- Choice helpers ----------
 function choiceSet(correct, cands, n = 3) {
@@ -70,7 +69,7 @@ const nearest = (r, list, n) => list.filter(x => !eq(x, r)).sort((a, b) => Math.
 function frac2dec(rank, mem) {
   const tier = tierFor(rank);
   const items = FRAC_POOL.filter(i => i.tier <= tier);
-  const dirs = rank >= 3 ? ['f2d', 'f2d', 'f2d', 'd2f'] : ['f2d'];
+  const dirs = ['f2d'];
   const keys = items.flatMap(i => dirs.map(dr => `${dr}:${key(i.r)}`));
   const k = mem.pickKey(keys);
   const [dir, fk] = k.split(':');
@@ -108,11 +107,7 @@ function frac2dec(rank, mem) {
 function pct(rank, mem) {
   const tier = tierFor(rank);
   const items = PCT_POOL.filter(i => i.tier <= tier);
-  const keys = items.flatMap(i => {
-    const ks = terminates(i.r) ? [`d2p:${key(i.r)}`, `p2d:${key(i.r)}`] : [];
-    if ((rank >= 3 || !ks.length) && i.r.d <= 40 && i.r.n < i.r.d) ks.push(`f2p:${key(i.r)}`);
-    return ks;
-  });
+  const keys = items.filter(i => terminates(i.r)).map(i => `d2p:${key(i.r)}`);
   const k = mem.pickKey(keys);
   const [dir, fk] = k.split(':');
   const [n, d] = fk.split('/').map(Number), r = R(n, d);
@@ -143,11 +138,13 @@ function pct(rank, mem) {
 // ---------- Skill: compare two fractions ----------
 const raw = (n, d) => ({ n, d }); // not reduced: 4/6 stays 4/6 on screen
 const between = (a, b) => a + rand(b - a + 1);
-function comparePair(type) {
+function comparePair(type, window_) {
   for (let tries = 0; tries < 200; tries++) {
     let a, b;
-    if (type === 'sameDen') { const d = between(3, 12); a = raw(between(1, d - 1), d); b = raw(between(1, d - 1), d); }
-    else if (type === 'sameNum') { const n = between(1, 6); a = raw(n, between(n + 1, 12)); b = raw(n, between(n + 1, 12)); }
+    if (type === 'spread') {
+      const d1 = between(3, 12), d2 = between(3, 12); a = raw(between(1, d1 - 1), d1); b = raw(between(1, d2 - 1), d2);
+      if (Math.abs(val(a) - val(b)) < 0.15) continue;
+    }
     else if (type === 'half') {
       const d1 = between(3, 12), d2 = between(3, 12);
       a = raw(between(1, Math.ceil(d1 / 2) - 1), d1); b = raw(between(Math.floor(d2 / 2) + 1, d2 - 1), d2);
@@ -155,32 +152,31 @@ function comparePair(type) {
     } else if (type === 'missing') { const k = pick([1, 1, 2]), d1 = between(k + 2, 12), d2 = between(k + 2, 12); a = raw(d1 - k, d1); b = raw(d2 - k, d2); }
     else if (type === 'close') {
       const d1 = between(4, 12), d2 = between(4, 12); a = raw(between(1, d1 - 1), d1); b = raw(between(1, d2 - 1), d2);
-      const diff = Math.abs(val(a) - val(b)); if (diff === 0 || diff > 0.08 || d1 === d2) continue;
+      const diff = Math.abs(val(a) - val(b)); if (diff === 0 || diff > (window_ || 0.08)) continue;
     } else if (type === 'equal') {
       const bd = between(2, 6), bn = between(1, bd - 1), base = R(bn, bd), k1 = between(1, 2), k2 = between(k1 + 1, 4);
       if (base.d * k2 > 15) continue; a = raw(base.n * k1, base.d * k1); b = raw(base.n * k2, base.d * k2);
     }
     if (type !== 'equal' && (cmp(a, b) === 0)) continue;
-    if (a.n === b.n && a.d === b.d) continue;
+    if (a.d === b.d || a.n === b.n) continue; // always different denominators (and tops), so there is no shortcut
     return Math.random() < 0.5 ? [a, b] : [b, a];
   }
   return [raw(1, 2), raw(1, 3)];
 }
 function compare(rank) {
-  const types = rank <= 2 ? ['sameDen', 'sameNum', 'sameNum'] : rank <= 5 ? ['sameDen', 'sameNum', 'half', 'half', 'missing', 'missing', 'close'] : ['half', 'missing', 'close', 'close', 'close'];
+  const types = rank <= 2 ? ['spread', 'half', 'half', 'missing'] : rank <= 5 ? ['half', 'missing', 'close', 'close'] : ['close'];
   const type = pick(types);
-  const [a, b] = comparePair(type), c = cmp(a, b);
+  const [a, b] = comparePair(type, rank <= 5 ? 0.12 : 0.07), c = cmp(a, b);
   const fh = x => `<span class="frac"><span>${x.n}</span><span>${x.d}</span></span>`, ft = x => `${x.n}/${x.d}`;
   const big = c > 0 ? a : b, small = c > 0 ? b : a;
   const tip = {
-    sameDen: `Same bottom number: the bigger top wins, so ${fh(big)} is bigger.`,
-    sameNum: `Same top number: a smaller bottom means bigger pieces, so ${fh(big)} wins.`,
+    spread: `Cross-multiply: ${a.n}×${b.d} = ${a.n * b.d} vs ${b.n}×${a.d} = ${b.n * a.d}.`,
     half: `${fh(small)} is less than ½ and ${fh(big)} is more than ½.`,
     missing: `Each is short of 1. ${fh(R(small.d - small.n, small.d))} is a bigger gap than ${fh(R(big.d - big.n, big.d))}, so ${fh(big)} is closer to 1.`,
     close: `Cross-multiply: ${a.n}×${b.d} = ${a.n * b.d} vs ${b.n}×${a.d} = ${b.n * a.d}.`,
     equal: `They simplify to the same fraction: ${fh(R(a.n, a.d))}.`,
   }[type];
-  const wrongTag = { sameDen: 'picked smaller top', sameNum: 'thought bigger bottom = bigger', half: 'missed the ½ benchmark', missing: 'missed "closer to 1"', close: 'close pair', equal: 'missed equal fractions' }[type];
+  const wrongTag = { spread: 'far-apart pair', half: 'missed the ½ benchmark', missing: 'missed "closer to 1"', close: 'close pair', equal: 'missed equal fractions' }[type];
   const choices = [
     { html: fh(a), text: ft(a), correct: c > 0, tag: wrongTag },
     { html: fh(b), text: ft(b), correct: c < 0, tag: wrongTag },
@@ -191,34 +187,7 @@ function compare(rank) {
   };
 }
 
-// ---------- Skill: compare two decimals (or two percents). Both values are always the same type. ----------
-function mixed(rank) {
-  const maxLen = rank <= 2 ? 2 : 3;
-  let a, b, la, lb;
-  for (let t = 0; t < 300; t++) {
-    la = between(1, maxLen); lb = between(1, maxLen);
-    const mk = l => { let n; do { n = between(1, 10 ** l - 1); } while (n % 10 === 0); return n; };
-    const na = mk(la), nb = mk(lb);
-    a = R(na, 10 ** la); b = R(nb, 10 ** lb);
-    if (eq(a, b)) continue;
-    if (la === lb && Math.random() < 0.7) continue;                       // mostly different lengths: that is the trap
-    if (rank >= 5 && Math.floor(val(a) * 10) !== Math.floor(val(b) * 10)) continue; // close pairs: same tenths digit
-    break;
-  }
-  const asPct = rank >= 3 && Math.random() < 0.25;
-  const show = r => (asPct ? pctStr(r) : decStr(r));
-  const c = cmp(a, b), places = Math.max(la, lb);
-  const pad = r => val(r).toFixed(places);
-  const tag = x => (decStr(x).length > decStr(c > 0 ? a : b).length ? 'thought more digits = bigger' : 'decimal place value');
-  return {
-    skill: 'mixed', key: `dec:${asPct ? 'pct' : 'dec'}:${show(a)}|${show(b)}`, prompt: '',
-    promptText: `${show(a)} vs ${show(b)}`, ask: asPct ? 'Which percent is bigger?' : 'Which decimal is bigger?',
-    choices: [{ html: show(a), text: show(a), correct: c > 0, tag: tag(a) }, { html: show(b), text: show(b), correct: c < 0, tag: tag(b) }],
-    layout: 'row2', tip: `Line up the places: ${pad(a)} vs ${pad(b)}`,
-  };
-}
-
-const GEN = { compare, frac2dec, pct, mixed };
+const GEN = { compare, frac2dec, pct };
 export function makeQuestion(skill, rank, mem) {
   const retry = mem.takeRetry(skill);
   if (retry) return { ...retry, choices: retry.layout === 'row2' ? retry.choices : shuffle(retry.choices), retry: true };

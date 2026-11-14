@@ -2,11 +2,11 @@
 import { makeQuestion } from '../js/questions.js';
 const mem = { pickKey: ks => ks[Math.floor(Math.random() * ks.length)], takeRetry: () => null };
 let bad = 0; const short = {};
-for (const skill of ['compare', 'frac2dec', 'pct', 'mixed'])
+for (const skill of ['compare', 'frac2dec', 'pct'])
   for (let rank = 1; rank <= 10; rank++)
     for (let i = 0; i < 1500; i++) {
       const q = makeQuestion(skill, rank, mem);
-      const want = skill === 'compare' || skill === 'mixed' ? 2 : 4;
+      const want = skill === 'compare' ? 2 : 4;
       const texts = q.choices.map(c => c.text);
       const fail = q.choices.filter(c => c.correct).length !== 1 ? 'correct!=1'
         : q.choices.length !== want ? 'count' : new Set(texts).size !== texts.length ? 'dupe'
