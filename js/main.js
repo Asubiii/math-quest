@@ -3,6 +3,7 @@ import { SKILLS, makeQuestion } from './questions.js';
 import { state, persist, goalFor, baseDamage, MAX_RANK, MIXED_UNLOCK, mixedUnlocked, memoryFor, recordAnswer, awardStar } from './progress.js';
 import { Scene, MONSTERS, BACKDROPS, bgUrl, loadManifest, paintMonster } from './battle.js';
 import { queueReport, flush } from './report.js';
+import { sfx, unlock, isMuted, setMuted } from './sfx.js';
 
 const $ = s => document.querySelector(s);
 const SKILL_ORDER = ['compare', 'frac2dec', 'pct'];
@@ -110,7 +111,7 @@ async function startFight(skill) {
   intro.hidden = false;
   $('#fight-go').focus();
 }
-$('#fight-go').addEventListener('click', () => { $('#intro').hidden = true; $('#qpanel').hidden = false; nextQuestion(); });
+$('#fight-go').addEventListener('click', () => { unlock(); sfx.appear(); $('#intro').hidden = true; $('#qpanel').hidden = false; nextQuestion(); });
 $('#flee').addEventListener('click', () => { if (F) { F.over = true; cancelAnimationFrame(F.raf); } scene.stop(); map(); });
 
 function renderHud() {
@@ -152,8 +153,8 @@ function nextQuestion() {
 
 async function tooSlow() {
   F.locked = true;
-  scene.popup('hero', 'Too slow!', 'slow');
-  await scene.monsterAttack(() => { F.hearts--; F.combo = 0; renderHud(); });
+  scene.popup('hero', 'Too slow!', 'slow'); scene.aura(false);
+  await scene.monsterAttack(() => { F.hearts--; F.combo = 0; renderHud(); sfx.hurt(); });
   if (F.hearts <= 0) return endFight(false);
   if (F.answered !== F.q) F.locked = false;
 }
@@ -170,16 +171,18 @@ async function answer(i) {
     const outcome = F.late ? 'late' : 'fast', crit = !F.late && sec <= F.goal / 2;
     buttons[i].classList.add('right');
     if (outcome === 'fast') { F.combo++; F.bestCombo = Math.max(F.bestCombo, F.combo); F.times.push(sec); } else F.combo = 0;
+    if (F.combo && F.combo % 5 === 0) { scene.banner(`COMBO ×${F.combo}!`); sfx.combo(); }
+    scene.aura(F.combo >= 5);
     if (crit) F.crits++;
     const mult = F.late ? 0.5 : crit ? 2 : 1, dmg = Math.round(F.base * mult * (1 + (F.late ? 0 : comboBonus())));
     entry.result = crit ? 'critical' : outcome === 'fast' ? 'hit' : 'late';
     F.log.push(entry); recordAnswer(q, outcome);
     renderHud();
     await scene.heroAttack(() => {
-      F.hp -= dmg; renderHud();
+      F.hp -= dmg; renderHud(); (crit ? sfx.crit : F.late ? sfx.late : sfx.hit)();
       scene.popup('monster', crit ? `CRITICAL! ${dmg}` : F.late ? `Late hit ${dmg}` : `${dmg}`, crit ? 'crit' : F.late ? 'late' : 'hit');
     }, crit);
-    if (F.hp <= 0) { await scene.defeat(); return endFight(true); }
+    if (F.hp <= 0) { scene.aura(false); sfx.win(); await scene.defeat(); return endFight(true); }
     return nextQuestion();
   }
   // Wrong answer: show the right one and the fast way, monster strikes (unless it already did for this question).
@@ -187,10 +190,10 @@ async function answer(i) {
   buttons[q.choices.indexOf(right)].classList.add('right');
   entry.result = 'wrong'; entry.mistake = c.tag || '';
   F.log.push(entry); recordAnswer(q, 'wrong');
-  F.combo = 0; renderHud();
+  F.combo = 0; renderHud(); scene.aura(false); sfx.wrong();
   $('#tip').innerHTML = q.tip; $('#tip').classList.add('on');
   const t0 = Date.now();
-  if (!F.late) await scene.monsterAttack(() => { F.hearts--; renderHud(); scene.popup('hero', 'Miss!', 'slow'); });
+  if (!F.late) await scene.monsterAttack(() => { F.hearts--; renderHud(); scene.popup('hero', 'Miss!', 'slow'); sfx.hurt(); });
   if (F.hearts <= 0) { await sleep(900); return endFight(false); }
   await sleep(Math.max(0, 2200 - (Date.now() - t0)));
   nextQuestion();
@@ -207,7 +210,8 @@ document.addEventListener('keydown', e => {
 async function endFight(won) {
   if (F.over) return;
   F.over = true; cancelAnimationFrame(F.raf);
-  if (!won) await scene.heroHurtDown();
+  scene.aura(false);
+  if (!won) { sfx.lose(); await scene.heroHurtDown(); }
   scene.stop();
   const s = state(), rankBefore = F.rank;
   let rankedUp = false;
@@ -254,6 +258,7 @@ async function endFight(won) {
     const wrong = F.log.filter(e => e.result === 'wrong').length, slow = F.log.filter(e => e.late).length;
     sub = `<p>Your rank stays at ${rankBefore}. Hearts lost: ${wrong} wrong, ${slow} too slow. Try again!</p>`;
   }
+  if (won && (rankedUp || !F.mastered)) setTimeout(sfx.rankup, 250);
   $('#result-title').textContent = headline;
   $('#result-sub').innerHTML = sub;
   $('#result-stats').innerHTML = [
@@ -268,6 +273,12 @@ async function endFight(won) {
   $('#again').onclick = () => startFight(F.skill);
 }
 $('#result-map').addEventListener('click', map);
+
+// ---------- Sound toggle ----------
+const soundBtn = $('#sound');
+const paintSound = () => { soundBtn.textContent = isMuted() ? '🔇' : '🔊'; soundBtn.setAttribute('aria-label', isMuted() ? 'Turn sound on' : 'Turn sound off'); };
+soundBtn.addEventListener('click', () => { setMuted(!isMuted()); paintSound(); unlock(); if (!isMuted()) sfx.combo(); });
+paintSound();
 
 // ---------- Boot ----------
 flush();

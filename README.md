@@ -40,3 +40,5 @@ No build step. Serve the folder with any static server, for example `python3 -m 
 ## Credits
 
 Character, monster and backdrop art is from the Salita project and is not licensed for reuse. Human character base: Open Peeps by Pablo Stanley (CC0), via DiceBear (MIT).
+
+Effects are drawn on a 320-pixel-wide canvas so they match the pixel art. Sounds are generated in the browser (no audio files) and can be muted from the map screen.

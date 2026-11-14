@@ -2,6 +2,8 @@
 // Sprite art comes from the Salita project (assets/). Sizes follow the scene height so the
 // layout works from phones to desktops.
 
+import { Fx } from './fx.js';
+
 export const MONSTERS = [
   { id: 'duwende', name: 'Goblin', blurb: 'A sneaky miner who guards its gold with a pickaxe.' },
   { id: 'santelmo', name: 'Wisp', blurb: 'A floating blue flame that drifts through the dark.' },
@@ -54,11 +56,12 @@ export class Scene {
   constructor(root) {
     this.root = root;
     root.innerHTML = `<img class="bg" alt=""><div class="shadow hero-shadow"></div><div class="shadow mon-shadow"></div>
-      <div class="sprite hero"></div><div class="sprite monster"></div><div class="pops"></div>`;
+      <div class="sprite hero"></div><div class="sprite monster"></div><canvas class="fx"></canvas><div class="pops"></div>`;
     this.bg = root.querySelector('.bg');
     this.hero = root.querySelector('.hero');
     this.mon = root.querySelector('.monster');
     this.pops = root.querySelector('.pops');
+    this.fx = new Fx(root.querySelector('.fx'));
     this.heroShadow = root.querySelector('.hero-shadow');
     this.monShadow = root.querySelector('.mon-shadow');
     this.busy = false; this.down = false; this.idleI = 0;
@@ -75,7 +78,7 @@ export class Scene {
     await loadManifest();
     this.monId = monId; this.down = false; this.busy = false;
     this.bg.src = bgUrl(backdrop);
-    this.mon.classList.remove('gone');
+    this.mon.classList.remove('gone'); this.fx.clear();
     this.layout();
     this.heroIdle();
     this.showMon('battle_idle', 0);
@@ -85,7 +88,7 @@ export class Scene {
   layout() {
     const W = this.root.clientWidth, H = this.root.clientHeight;
     if (!W || !H) return;
-    this.W = W; this.H = H;
+    this.W = W; this.H = H; this.fx.resize(W, H);
     this.hs = Math.round(H * 0.34);          // hero frame box (32px art)
     this.groundY = H * 0.9;
     this.heroX = W * 0.27;
@@ -138,8 +141,10 @@ export class Scene {
       this.heroFrame(i);
       if (i === HIT_FRAME) {
         onHit?.();
+        this.fx.burst(this.monX - this.monBase * 0.12, this.groundY - this.monBase * 0.36, crit);
         if (crit && !reduced()) this.shake(true);
         this.mon.classList.add('flash');
+        if (crit) await sleep(110); // hit-stop: hold the contact frame
         this.playMon('hurt').then(() => this.mon.classList.remove('flash'));
       }
       await sleep(ATTACK_MS[i]);
@@ -156,6 +161,7 @@ export class Scene {
     this.mon.classList.add('lunging');
     await this.playMon('battle_attack', () => {
       onHit?.(); this.hero.classList.add('flash'); if (!reduced()) this.shake(false);
+      this.fx.ouch(this.heroX, this.groundY - this.hs * 0.45);
       setTimeout(() => this.hero.classList.remove('flash'), 360);
     }, contact);
     this.mon.classList.remove('lunging');
@@ -163,11 +169,14 @@ export class Scene {
   }
   async defeat() {
     this.busy = true; this.down = true;
+    this.fx.confetti(this.monX, this.groundY - this.monBase * 0.4);
     await this.playMon('defeat');
     await sleep(400);
     this.mon.classList.add('gone');
   }
   async heroHurtDown() { this.hero.classList.add('down'); await sleep(700); this.hero.classList.remove('down'); }
+  aura(on) { this.fx.setAura(on, this.heroX, this.groundY - 2, this.hs * 0.45); this.hero.classList.toggle('fired-up', on); }
+  banner(text) { const s = document.createElement('span'); s.className = 'banner'; s.textContent = text; this.pops.appendChild(s); setTimeout(() => s.remove(), 1300); }
   shake(big) { this.root.classList.remove('shake', 'shake-big'); void this.root.offsetWidth; this.root.classList.add(big ? 'shake-big' : 'shake'); }
   popup(on, text, kind) {
     const s = document.createElement('span');
