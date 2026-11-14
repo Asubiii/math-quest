@@ -6,7 +6,7 @@ import { queueReport, flush } from './report.js';
 import { sfx, unlock, isMuted, setMuted } from './sfx.js';
 
 const $ = s => document.querySelector(s);
-const SKILL_ORDER = ['compare', 'frac2dec', 'pct'];
+const SKILL_ORDER = ['compare', 'frac2dec', 'pct', 'angles'];
 const HEARTS = 5, HITS_TO_WIN = 16;
 const fmt = s => s.toFixed(1) + 's';
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -42,10 +42,10 @@ async function map() {
   const s = state();
   $('#hello').textContent = `Hi, ${s.name}!`;
   const stars = Object.values(s.stars).reduce((a, b) => a + b.filter(k => SKILL_ORDER.includes(k)).length, 0);
-  $('#star-count').textContent = `${stars}/30`;
+  $('#star-count').textContent = `${stars}/40`;
   const wrap = $('#areas'); wrap.innerHTML = '';
   for (const skill of SKILL_ORDER) {
-    const rank = s.ranks[skill], locked = skill === 'mixed' && !mixedUnlocked(), mastered = s.mastered?.[skill];
+    const rank = s.ranks[skill], locked = false, mastered = s.mastered?.[skill];
     const mon = MONSTERS[Math.min(rank, MAX_RANK) - 1];
     const card = document.createElement('button');
     card.className = 'area' + (locked ? ' locked' : '');

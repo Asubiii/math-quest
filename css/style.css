@@ -186,3 +186,19 @@ dialog li b { color: var(--text); }
 .timer.crit i { animation: crit-pulse .5s steps(2) infinite; }
 @keyframes crit-pulse { 50% { filter: brightness(1.25); } }
 @media (prefers-reduced-motion: reduce) { .timer.crit i, .banner, .pop.crit { animation-duration: .01s; } }
+
+/* Angle diagrams */
+.diagram { width: min(100%, 330px); height: auto; display: block; overflow: visible; }
+.diagram .shape, .diagram line.shape { fill: none; stroke: var(--text); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.diagram .tick { stroke: var(--text); stroke-width: 2; }
+.diagram .arc { fill: none; stroke-width: 2; }
+.diagram .arc.known { stroke: rgb(var(--hi)); }
+.diagram .arc.ask { stroke: #7fd6ff; stroke-width: 2.6; }
+.diagram text { font: 800 13px var(--font); fill: var(--text); text-anchor: middle; dominant-baseline: central; }
+.diagram text.ask { fill: #7fd6ff; font-size: 17px; font-weight: 900; }
+.diagram text.par { fill: var(--muted); font-size: 12px; }
+.word-q { font-size: .62em; font-weight: 800; }
+.word-q b { color: rgb(var(--hi)); font-weight: 900; }
+.ask b { color: #7fd6ff; }
+.diagram { max-height: 21dvh; }
+body:has(#battle:not([hidden])) .credits { display: none; }

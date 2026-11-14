@@ -9,6 +9,7 @@ Play: https://asubiii.github.io/math-quest/
 - **Fraction Face-Off**: which of two fractions with different denominators is bigger (Woodland Trail)
 - **Fractions → Decimals** (Hush Cave)
 - **Decimals → Percents** (Coast Path)
+- **Angle Hunt**: complementary, supplementary and vertical angles, triangle angle sums, right and isosceles triangles, exterior angles, parallel lines (Cliff Summit)
 
 ## How fights work
 

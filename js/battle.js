@@ -21,7 +21,7 @@ export const BACKDROPS = {
   pct: ['coast-meadow', 'coast-windy-field', 'coast-east-coast', 'coast-creek-bridge', 'coast-terrace-walk', 'coast-high-road', 'coast-upper-terrace', 'coast-town-gate', 'coast-cliff-shelf', 'coast-cave-approach'],
   frac2dec: ['cave-mouth-hall', 'cave-drip-passage', 'cave-crossing', 'cave-river-hall', 'cave-echo-gallery', 'cave-swiftlet-roost', 'cave-crevice', 'cave-upper-gallery', 'cave-shaft-head', 'cave-skylight-exit'],
   compare: ['coast-woodland', 'coast-creek-bridge', 'coast-meadow', 'coast-terrace-walk', 'coast-windy-field', 'coast-high-road', 'coast-woodland', 'coast-upper-terrace', 'coast-town-gate', 'coast-cliff-shelf'],
-  mixed: ['coast-cliff-shelf', 'cave-overlook', 'coast-upper-terrace', 'cave-skylight-exit', 'coast-high-road', 'cave-upper-gallery', 'coast-cliff-shelf', 'cave-overlook', 'cave-shaft-head', 'cave-overlook'],
+  angles: ['coast-cliff-shelf', 'cave-overlook', 'coast-upper-terrace', 'cave-skylight-exit', 'coast-high-road', 'cave-upper-gallery', 'coast-cliff-shelf', 'cave-overlook', 'cave-shaft-head', 'cave-overlook'],
 };
 export const bgUrl = name => `assets/bg/battle-bg-${name}.png`;
 

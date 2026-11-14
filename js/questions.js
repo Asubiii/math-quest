@@ -2,12 +2,14 @@
 // A question: { skill, key, prompt (HTML), promptText, choices:[{html,text,correct,tag}], layout, tip (HTML) }
 // Wrong choices carry a `tag` naming the mistake they represent, which goes to the tutor report.
 
+import { angles } from './angles.js';
 import { R, val, eq, cmp, mul, key, decStr, pctStr, fracHTML, fracText, terminates, rand, pick, shuffle } from './numbers.js';
 
 export const SKILLS = {
   compare: { name: 'Fraction Face-Off', short: 'Compare fractions', area: 'Woodland Trail' },
   frac2dec: { name: 'Fractions → Decimals', short: 'Fraction to decimal', area: 'Hush Cave' },
   pct: { name: 'Decimals → Percents', short: 'Decimal to percent', area: 'Coast Path' },
+  angles: { name: 'Angle Hunt', short: 'Missing angles', area: 'Cliff Summit' },
 };
 
 // ---------- Fact pools (fractions to memorize), by tier ----------
@@ -187,7 +189,7 @@ function compare(rank) {
   };
 }
 
-const GEN = { compare, frac2dec, pct };
+const GEN = { compare, frac2dec, pct, angles };
 export function makeQuestion(skill, rank, mem) {
   const retry = mem.takeRetry(skill);
   if (retry) return { ...retry, choices: retry.layout === 'row2' ? retry.choices : shuffle(retry.choices), retry: true };
