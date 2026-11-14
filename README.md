@@ -15,7 +15,7 @@ Play: https://asubiii.github.io/math-quest/
 - Answer before the timer bar runs out to hit. Answer in the first half for a critical hit (2× damage).
 - A wrong answer or an empty timer costs a heart. Five hearts per fight.
 - Every 5 right in a row adds +25% damage.
-- Ten Speed Ranks per skill. The time goal drops from 8 seconds to 2 seconds per answer.
+- Ten Speed Ranks per skill. The time goal drops from 16 seconds to 4 seconds per answer.
 - Missed and slow facts come back more often.
 
 Progress is saved in the browser on the device used to play.

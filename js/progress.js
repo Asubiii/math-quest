@@ -1,7 +1,7 @@
 // Saved progress on this device: nickname, speed rank per skill, fact memory (spaced repetition),
 // missed questions to retry, and which monsters have been beaten in which skill.
 
-export const GOALS = [8, 7, 6, 5, 4.5, 4, 3.5, 3, 2.5, 2];           // seconds per answer, rank 1..10
+export const GOALS = [16, 14, 12, 10, 9, 8, 7, 6, 5, 4];        // seconds per answer, rank 1..10
 export const GOAL_SCALE = { compare: 1, frac2dec: 1, pct: 1, mixed: 1 };
 export const MAX_RANK = GOALS.length;
 export const goalFor = (skill, rank) => GOALS[Math.min(rank, MAX_RANK) - 1] * GOAL_SCALE[skill];

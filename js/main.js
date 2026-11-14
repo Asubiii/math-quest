@@ -55,7 +55,7 @@ async function map() {
         <div class="area-name">${SKILLS[skill].name}</div>
         <div class="area-rank">${mastered ? 'Mastered! Free play' : `Speed Rank ${rank} · goal ${fmt(goalFor(skill, rank))}`}</div>
         <div class="pips">${Array.from({ length: MAX_RANK }, (_, i) => `<i class="${i < rank - 1 || mastered ? 'on' : i === rank - 1 ? 'now' : ''}"></i>`).join('')}</div>
-        <div class="area-next">${locked ? `🔒 Reach Speed Rank ${MIXED_UNLOCK} in the other three to unlock` : mastered ? 'Fight any monster at 2.0s' : `Next: <b>${mon.name}</b>`}</div>
+        <div class="area-next">${locked ? `🔒 Reach Speed Rank ${MIXED_UNLOCK} in the other three to unlock` : mastered ? `Fight any monster at ${fmt(goalFor(skill, MAX_RANK))}` : `Next: <b>${mon.name}</b>`}</div>
       </div>`;
     card.querySelector('.area-art').style.backgroundImage = `linear-gradient(rgba(24,22,20,.05), rgba(24,22,20,.45)), url(${bgUrl(BACKDROPS[skill][Math.min(rank, MAX_RANK) - 1])})`;
     paintMonster(card.querySelector('.portrait'), mon.id, 'battle_idle', 0, 96);
