@@ -1,0 +1,1 @@
+{ "name": "math-quest", "private": true, "type": "module", "scripts": { "test": "node tests/questions.test.js" } }

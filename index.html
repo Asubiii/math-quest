@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Math Quest</title>
+<meta name="description" content="Beat monsters with fast fraction, decimal and percent facts.">
+<meta name="theme-color" content="#181614">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<section id="welcome" class="screen" hidden>
+  <div class="card welcome-card">
+    <h1>Math Quest</h1>
+    <p>Fast answers hit harder. Beat ten monsters by getting quicker at fractions, decimals and percents.</p>
+    <form id="welcome-form">
+      <label for="nick">Pick a hero nickname</label>
+      <input id="nick" maxlength="20" autocomplete="off" placeholder="e.g. StarSlayer" required>
+      <button class="btn primary" type="submit">Start</button>
+    </form>
+  </div>
+</section>
+
+<section id="map" class="screen" hidden>
+  <header class="topbar">
+    <div>
+      <h1>Math Quest</h1>
+      <div class="sub"><span id="hello"></span> <button id="rename" class="link">change name</button></div>
+    </div>
+    <div class="topbar-btns">
+      <button id="to-bestiary" class="btn">Bestiary <span id="star-count" class="chip"></span></button>
+      <button id="to-help" class="btn icon" aria-label="How to play">?</button>
+    </div>
+  </header>
+  <div id="areas" class="areas"></div>
+</section>
+
+<section id="battle" class="screen" hidden>
+  <div class="battle-wrap">
+    <div id="scene" class="scene"></div>
+    <div class="hud">
+      <div class="hud-left">
+        <div id="hearts" class="hearts" aria-label="Hearts"></div>
+        <div id="combo" class="combo"></div>
+      </div>
+      <div class="hud-right">
+        <div class="mon-line"><span id="mon-name"></span><span id="hp-text"></span></div>
+        <div class="hp"><i id="hp-fill"></i></div>
+      </div>
+    </div>
+    <button id="flee" class="btn small flee">Map</button>
+    <div id="intro" class="intro" hidden>
+      <h2></h2><p></p>
+      <button id="fight-go" class="btn primary">Fight!</button>
+    </div>
+  </div>
+  <div id="qpanel" class="qpanel" hidden>
+    <div class="timer-row">
+      <span id="rank-badge" class="chip"></span>
+      <div id="timer" class="timer"><i id="timer-fill"></i><b class="crit-mark"></b></div>
+      <span class="goal-line">Goal <b id="goal"></b> · You <b id="you-avg">–</b></span>
+    </div>
+    <div id="ask" class="ask"></div>
+    <div id="prompt" class="prompt"></div>
+    <div id="choices" class="choices"></div>
+    <div id="tip" class="tip"></div>
+  </div>
+</section>
+
+<section id="result" class="screen" hidden>
+  <div class="card result-card">
+    <div id="result-portrait" class="portrait big"></div>
+    <h2 id="result-title"></h2>
+    <div id="result-sub"></div>
+    <div id="result-stats" class="stats"></div>
+    <div id="review" class="review"></div>
+    <div class="row">
+      <button id="again" class="btn primary"></button>
+      <button id="result-map" class="btn">Map</button>
+    </div>
+  </div>
+</section>
+
+<section id="bestiary" class="screen" hidden>
+  <header class="topbar">
+    <div><h1>Bestiary</h1><div class="sub">Beat a monster in a skill to earn its star. Four skills, four stars each.</div></div>
+    <button id="bestiary-back" class="btn">Back</button>
+  </header>
+  <div id="beasts" class="beasts"></div>
+</section>
+
+<dialog id="help">
+  <h2>How to play</h2>
+  <ul>
+    <li><b>Tap the right answer</b> before the timer bar runs out to hit the monster.</li>
+    <li><b>Answer in the first half</b> of the bar (the gold part) for a <b>critical hit</b>: double damage.</li>
+    <li><b>Wrong answer or too slow:</b> the monster hits you and you lose a heart. Lose all 5 and it gets away.</li>
+    <li><b>Combo:</b> every 5 right in a row adds +25% damage.</li>
+    <li><b>Win a fight to rank up.</b> Each rank makes the timer shorter, gives you more damage and brings a tougher monster.</li>
+    <li>On a keyboard, press <kbd>1</kbd>–<kbd>4</kbd> to answer.</li>
+  </ul>
+  <button id="help-close" class="btn primary">Got it</button>
+</dialog>
+
+<footer class="credits">Character and monster art from the Salita project. Human character base: Open Peeps by Pablo Stanley (CC0).</footer>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
