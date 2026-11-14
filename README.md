@@ -1,6 +1,12 @@
 # Math Quest
 
-A mental-math battle game for fractions, decimals and percents. Every question is multiple choice. Fast answers hit harder, and winning a fight raises your Speed Rank, which shortens the timer and brings a stronger monster.
+HSPT practice site with two student pages and a tutor page.
+
+- **Speed Study**: a mental-math battle game. Every question is multiple choice; fast answers hit harder, and winning a fight raises the Speed Rank, which shortens the timer and brings a stronger monster.
+- **Flashcards**: Anki-style spaced repetition over the HSPT math deck (Anki's default scheduler settings). Only topics the tutor turns on are shown. Progress is saved on the device and copied to the tutor's sheet.
+- **Tutor page**: password protected. Switch flashcard topics on and off, and see daily minutes, cards reviewed, packet results and Speed Study fights.
+
+The opening screen offers Student login (no password) or Tutor login.
 
 Play: https://asubiii.github.io/math-quest/
 
@@ -23,18 +29,20 @@ One game mode mixes four kinds of question, with numbers generated fresh each ti
 
 Progress is saved in the browser on the device used to play.
 
-## Reporting setup (tutor)
+## Google Sheet setup (tutor)
 
-Each finished fight can be sent to a private Google Sheet.
+Progress, topic switches and packet results live in a private Google Sheet.
 
 1. Create a new Google Sheet. Open **Extensions > Apps Script**.
-2. Replace the editor contents with `apps-script/Code.gs` and save.
+2. Replace the editor contents with `apps-script/Code.gs`, put the tutor password in `TUTOR_PASSWORD`, and save.
 3. Choose the `setup` function and press **Run**. Approve the permission prompt.
 4. Press **Deploy > New deployment**, type **Web app**, execute as **Me**, access **Anyone**. Copy the web app URL.
 5. Paste the URL into `js/config.js` as `REPORT_URL`, then commit and push.
 6. Optional: run `createWeeklyEmail` once for a Sunday summary email.
 
-The sheet gets four tabs: **Summary** (ranks, most-missed questions, mistake types), **Fights**, **Answers** and **Ranks**. Only the player's nickname is sent; no names or emails.
+The sheet gets tabs for **Topics** (flashcard switches), **Packets** (graded answer sheets), **Time**, **Reviews**, **Fights**, **Answers** and **State**. The tutor password is stored in the script's private properties, never in this repository.
+
+The flashcards come from the Anki deck source; regenerate `assets/cards.json` with `export_cards.py` from the tutoring folder.
 
 ## Development
 

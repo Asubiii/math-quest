@@ -10,30 +10,74 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Nunito:wght@600;700;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=1794689753">
+<link rel="stylesheet" href="css/style.css?v=1794692624">
 </head>
 <body>
 
-<section id="welcome" class="screen" hidden>
-  <div class="card welcome-card">
+<section id="login" class="screen" hidden>
+  <div class="card login-card">
     <h1>Math Quest</h1>
-    <p>Fast answers hit harder. Beat ten monsters by getting quicker at fractions, decimals and percents.</p>
-    <form id="welcome-form">
-      <label for="nick">Pick a hero nickname</label>
-      <input id="nick" maxlength="20" autocomplete="off" placeholder="e.g. StarSlayer" required>
-      <button class="btn primary" type="submit">Start</button>
+    <p>HSPT practice: Speed Study and Flashcards.</p>
+    <div class="login-choices">
+      <button id="login-student" class="btn primary">Student login<small>Victoria</small></button>
+      <button id="login-tutor" class="btn">Tutor login</button>
+    </div>
+    <form id="tutor-form" hidden>
+      <label for="tutor-pw">Tutor password</label>
+      <input id="tutor-pw" type="password" autocomplete="current-password" required>
+      <div id="tutor-err" class="err"></div>
+      <div class="row"><button class="btn primary" type="submit">Sign in</button><button class="btn" type="button" id="tutor-cancel">Back</button></div>
     </form>
   </div>
+</section>
+
+<section id="home" class="screen" hidden>
+  <header class="topbar">
+    <div><h1>Hi, Victoria!</h1><div class="sub">About 15 minutes on each, every weekday.</div></div>
+    <button id="signout" class="btn small">Sign out</button>
+  </header>
+  <div class="home-cards">
+    <button id="go-speed" class="home-card speed">
+      <div class="hc-art"><div class="portrait" id="home-mon"></div></div>
+      <div class="hc-body"><h2>Speed Study</h2><p>Beat monsters with fast fractions, decimals, percents and angles.</p>
+        <div class="meter"><i id="speed-bar"></i></div><div class="hc-meta" id="speed-meta"></div></div>
+    </button>
+    <button id="go-flash" class="home-card flash">
+      <div class="hc-art"><div class="hc-stack"><span></span><span></span><span>?</span></div></div>
+      <div class="hc-body"><h2>Flashcards</h2><p>Review the topics from your practice packets.</p>
+        <div class="meter"><i id="flash-bar"></i></div><div class="hc-meta" id="flash-meta"></div></div>
+    </button>
+  </div>
+</section>
+
+<section id="flash" class="screen" hidden>
+  <header class="topbar">
+    <div><h1>Flashcards</h1><div class="sub" id="ak-time"></div></div>
+    <button id="flash-home" class="btn">Home</button>
+  </header>
+  <div class="ak-counts"><span class="n" title="New">New <b id="ak-new">0</b></span><span class="l" title="Learning">Learning <b id="ak-learn">0</b></span><span class="d" title="Due">Due <b id="ak-due">0</b></span></div>
+  <div id="ak-card" class="ak-card"></div>
+  <div id="ak-buttons" class="ak-buttons"></div>
+  <p class="ak-keys">Keyboard: space shows the answer, then 1 Again · 2 Hard · 3 Good · 4 Easy.</p>
+</section>
+
+<section id="tutor" class="screen" hidden>
+  <header class="topbar">
+    <div><h1>Tutor</h1><div class="sub">Victoria's progress and flashcard topics</div></div>
+    <div class="topbar-btns"><button id="tutor-refresh" class="btn">Refresh</button><button id="tutor-signout" class="btn">Sign out</button></div>
+  </header>
+  <div id="tutor-body"></div>
 </section>
 
 <section id="map" class="screen" hidden>
   <header class="topbar">
     <div>
       <h1>Math Quest</h1>
-      <div class="sub"><span id="hello"></span> <button id="rename" class="link">change name</button></div>
+      <div class="sub"><span id="hello"></span></div>
     </div>
     <div class="topbar-btns">
       <button id="to-bestiary" class="btn">Bestiary <span id="star-count" class="chip"></span></button>
+      <button id="speed-home" class="btn">Home</button>
       <button id="sound" class="btn icon"></button>
       <button id="to-help" class="btn icon" aria-label="How to play">?</button>
     </div>
@@ -109,6 +153,6 @@
 </dialog>
 
 <footer class="credits">Character and monster art from the Salita project. Human character base: Open Peeps by Pablo Stanley (CC0).</footer>
-<script type="module" src="js/main.js?v=1794689753"></script>
+<script type="module" src="js/app.js?v=1794692624"></script>
 </body>
 </html>

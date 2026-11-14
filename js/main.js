@@ -1,9 +1,9 @@
 // Screens and the fight loop.
-import { SKILLS, makeQuestion, pickType } from './questions.js?v=1794689753';
-import { state, persist, goalFor, baseDamage, MAX_RANK, memoryFor, recordAnswer, awardStar } from './progress.js?v=1794689753';
-import { Scene, MONSTERS, BACKDROPS, bgUrl, loadManifest, paintMonster } from './battle.js?v=1794689753';
-import { queueReport, flush } from './report.js?v=1794689753';
-import { sfx, unlock, isMuted, setMuted } from './sfx.js?v=1794689753';
+import { SKILLS, makeQuestion, pickType } from './questions.js?v=1794692624';
+import { state, persist, goalFor, baseDamage, MAX_RANK, memoryFor, recordAnswer, awardStar } from './progress.js?v=1794692624';
+import { Scene, MONSTERS, BACKDROPS, bgUrl, loadManifest, paintMonster } from './battle.js?v=1794692624';
+import { queueReport, flush } from './report.js?v=1794692624';
+import { sfx, unlock, isMuted, setMuted } from './sfx.js?v=1794692624';
 
 const $ = s => document.querySelector(s);
 const MODE = 'all', SKILL_ORDER = [MODE]; // one game mode that mixes every question type
@@ -16,20 +16,6 @@ function show(id) {
   document.querySelectorAll('.screen').forEach(s => s.hidden = s.id !== id);
   window.scrollTo(0, 0);
 }
-
-// ---------- Welcome ----------
-function welcome() {
-  show('welcome');
-  const input = $('#nick');
-  input.value = state().name || '';
-  input.focus();
-}
-$('#welcome-form').addEventListener('submit', e => {
-  e.preventDefault();
-  const name = $('#nick').value.trim().slice(0, 20);
-  if (!name) return;
-  state().name = name; persist(); map();
-});
 
 // ---------- Map ----------
 function opponent(skill) {
@@ -68,7 +54,6 @@ async function map() {
 $('#to-bestiary').addEventListener('click', bestiary);
 $('#to-help').addEventListener('click', () => $('#help').showModal());
 $('#help-close').addEventListener('click', () => $('#help').close());
-$('#rename').addEventListener('click', welcome);
 
 // ---------- Bestiary ----------
 function bestiary() {
@@ -282,6 +267,6 @@ const paintSound = () => { soundBtn.textContent = isMuted() ? '🔇' : '🔊'; s
 soundBtn.addEventListener('click', () => { setMuted(!isMuted()); paintSound(); unlock(); if (!isMuted()) sfx.combo(); });
 paintSound();
 
-// ---------- Boot ----------
+// Opened from app.js (student home).
+export { map as openSpeed, show };
 flush();
-if (state().name) map(); else welcome();

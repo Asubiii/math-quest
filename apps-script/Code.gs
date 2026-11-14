@@ -1,17 +1,31 @@
 /**
- * Math Quest reporting. Receives one record per finished fight and writes it to this spreadsheet.
+ * Math Quest backend: a private Google Sheet that stores Victoria's progress and the tutor's
+ * flashcard topic switches. The website talks to it through this web app.
  *
- * Setup (once): open a new Google Sheet > Extensions > Apps Script > paste this file > Run "setup"
- * > Deploy > New deployment > Web app > Execute as "Me", Who has access "Anyone" > copy the URL
- * into js/config.js. Optional: run "createWeeklyEmail" once to get a Sunday summary by email.
+ * Setup (once):
+ *   1. New Google Sheet > Extensions > Apps Script > replace everything with this file.
+ *   2. Put the tutor password between the quotes on the TUTOR_PASSWORD line below. Save.
+ *   3. Run "setup" and approve the permission prompt.
+ *   4. Deploy > New deployment > type "Web app", Execute as "Me", Who has access "Anyone" > Deploy.
+ *   5. Copy the web app URL into js/config.js on the website.
+ * Optional: run "createWeeklyEmail" once to get a Sunday summary email.
  */
 
+const TUTOR_PASSWORD = ''; // used by setup() only; stored privately in Script Properties
+
 const SHEETS = {
+  Topics: ['Topic', 'Active', 'Why it is on', 'Updated'],
+  Packets: ['Date', 'Day', 'Section', 'Question', 'Topic', 'Her answer', 'Correct answer', 'Result', 'Marked hard'],
+  Time: ['Date', 'Page', 'Seconds'],
+  Reviews: ['Date', 'Card', 'Topic', 'Rating (1 again, 2 hard, 3 good, 4 easy)', 'Next interval (days)'],
   Fights: ['Time', 'Player', 'Skill', 'Speed rank', 'Goal (s)', 'Monster', 'Result', 'Questions', 'Correct', 'On time', 'Criticals',
     'Accuracy', 'Median (s)', 'Average (s)', 'Best combo', 'Rank after', 'Ranked up', 'Fight length (s)', 'Free play', 'Device'],
   Answers: ['Time', 'Player', 'Question type', 'Speed rank', 'Question', 'Correct answer', 'Her answer', 'Result', 'Mistake type', 'Seconds', 'Goal (s)'],
-  Ranks: ['Player', 'Skill', 'Speed rank', 'Goal (s)', 'Last played', 'Fights', 'Last rank-up'],
+  State: ['Key', 'Value', 'Updated'],
 };
+const TOPICS = ['Fractions', 'Decimals', 'Conversions', 'Units', 'Ratios', 'Percents', 'Number Theory', 'Operations', 'Exponents',
+  'Sequences', 'Roman Numerals', 'Algebra', 'Graphing', 'Geometry', 'Circles', 'Solids', 'Statistics', 'Probability'];
+const START_ON = ['Fractions', 'Decimals', 'Conversions'];
 
 function setup() {
   const ss = SpreadsheetApp.getActive();
@@ -19,57 +33,104 @@ function setup() {
     const sh = ss.getSheetByName(name) || ss.insertSheet(name);
     if (sh.getLastRow() === 0) { sh.appendRow(SHEETS[name]); sh.setFrozenRows(1); sh.getRange(1, 1, 1, SHEETS[name].length).setFontWeight('bold'); }
   });
-  let sum = ss.getSheetByName('Summary');
-  if (!sum) {
-    sum = ss.insertSheet('Summary', 0);
-    sum.getRange('A1').setValue('Math Quest summary').setFontWeight('bold').setFontSize(14);
-    sum.getRange('A3').setValue('Current speed ranks').setFontWeight('bold');
-    sum.getRange('A4').setFormula('=IFERROR(QUERY(Ranks!A:G,"select A,B,C,D,E,F,G where A is not null",1),"No fights yet")');
-    sum.getRange('I3').setValue('Most-missed questions (wrong answers)').setFontWeight('bold');
-    sum.getRange('I4').setFormula('=IFERROR(QUERY(Answers!A:K,"select E,F,count(A) where H=\'wrong\' group by E,F order by count(A) desc limit 15 label E \'Question\', F \'Answer\', count(A) \'Times missed\'",1),"None yet")');
-    sum.getRange('M3').setValue('Most common mistake types').setFontWeight('bold');
-    sum.getRange('M4').setFormula('=IFERROR(QUERY(Answers!A:K,"select I,count(A) where H=\'wrong\' and I is not null group by I order by count(A) desc limit 10 label I \'Mistake\', count(A) \'Times\'",1),"None yet")');
-    sum.getRange('P3').setValue('Slowest correct questions (too slow)').setFontWeight('bold');
-    sum.getRange('P4').setFormula('=IFERROR(QUERY(Answers!A:K,"select E,count(A),avg(J) where H=\'late\' group by E order by count(A) desc limit 15 label E \'Question\', count(A) \'Times late\', avg(J) \'Avg seconds\'",1),"None yet")');
-    sum.getRange('A20').setValue('Fights per day').setFontWeight('bold');
-    sum.getRange('A21').setFormula('=IFERROR(QUERY(Fights!A:T,"select toDate(A),count(B),sum(H),avg(L) where A is not null group by toDate(A) order by toDate(A) desc limit 30 label toDate(A) \'Day\', count(B) \'Fights\', sum(H) \'Questions\', avg(L) \'Accuracy\' format avg(L) \'0%\'",1),"None yet")');
+  const topics = ss.getSheetByName('Topics');
+  if (topics.getLastRow() === 1) {
+    topics.getRange(2, 1, TOPICS.length, 4).setValues(TOPICS.map(t => [t, START_ON.includes(t), START_ON.includes(t) ? 'Starting topic' : '', new Date()]));
+    topics.getRange(2, 2, TOPICS.length, 1).insertCheckboxes();
   }
+  if (TUTOR_PASSWORD) PropertiesService.getScriptProperties().setProperty('TUTOR_PASSWORD', TUTOR_PASSWORD);
   const blank = ss.getSheetByName('Sheet1');
   if (blank && blank.getLastRow() === 0) ss.deleteSheet(blank);
 }
 
-function doGet() { return ContentService.createTextOutput('Math Quest reporting is running.'); }
+const json = x => ContentService.createTextOutput(JSON.stringify(x)).setMimeType(ContentService.MimeType.JSON);
+const sheet = name => { const ss = SpreadsheetApp.getActive(); if (!ss.getSheetByName(name)) setup(); return ss.getSheetByName(name); };
+const clean = v => (typeof v === 'string' ? v.slice(0, 300).replace(/^[=+\-@]/, "'$&") : v); // never store a formula from outside
+const tz = () => Session.getScriptTimeZone();
+const cell = v => (v instanceof Date ? Utilities.formatDate(v, tz(), "yyyy-MM-dd'T'HH:mm:ss") : v);
+function rows(name, limit) {
+  const sh = sheet(name), n = sh.getLastRow() - 1;
+  if (n <= 0) return [];
+  const take = Math.min(n, limit || n);
+  return sh.getRange(sh.getLastRow() - take + 1, 1, take, sh.getLastColumn()).getValues().map(r => r.map(cell));
+}
+function getState(key) {
+  const r = rows('State').find(x => x[0] === key);
+  return r ? JSON.parse(r[1]) : null;
+}
+function setState(key, value) {
+  const sh = sheet('State'), data = sh.getDataRange().getValues(), i = data.findIndex((r, j) => j > 0 && r[0] === key);
+  const row = [key, JSON.stringify(value), new Date()];
+  if (i > 0) sh.getRange(i + 1, 1, 1, 3).setValues([row]); else sh.appendRow(row);
+}
+const activeTopics = () => rows('Topics').filter(r => r[1] === true).map(r => r[0]);
+function setTopic(topic, active, reason) {
+  const sh = sheet('Topics'), data = sh.getDataRange().getValues(), i = data.findIndex((r, j) => j > 0 && r[0] === topic);
+  if (i < 1) return false;
+  sh.getRange(i + 1, 2, 1, 3).setValues([[!!active, clean(reason || (active ? 'Turned on by tutor' : '')), new Date()]]);
+  return true;
+}
+
+function doGet(e) {
+  const action = e && e.parameter && e.parameter.action;
+  if (action === 'student') return json({ topics: activeTopics(), flash: getState('flash') });
+  return ContentService.createTextOutput('Math Quest backend is running.');
+}
 
 function doPost(e) {
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
   try {
     const r = JSON.parse(e.postData.contents);
-    const ss = SpreadsheetApp.getActive();
-    if (!ss.getSheetByName('Fights')) setup();
-    const clean = v => (typeof v === 'string' ? v.slice(0, 200).replace(/^[=+\-@]/, "'$&") : v); // no formulas from outside
-    const when = new Date(r.time || Date.now());
-    const player = clean(String(r.player || 'unknown'));
-    const acc = r.questions ? r.correct / r.questions : 0;
-    ss.getSheetByName('Fights').appendRow([when, player, clean(r.skill), r.rank, r.goal, clean(r.monster), clean(r.result), r.questions, r.correct, r.onTime, r.crits,
-      acc, r.medianSec, r.avgSec, r.bestCombo, r.rankAfter, r.rankedUp ? 'yes' : '', r.seconds, r.freePlay ? 'yes' : '', clean(r.device)]);
-    const fights = ss.getSheetByName('Fights'); fights.getRange(fights.getLastRow(), 12).setNumberFormat('0%');
-    const rows = (r.answers || []).slice(0, 80).map(a => [when, player, clean(a.type || r.skill), r.rank, clean(a.q), clean(a.answer), clean(a.chosen), clean(a.result), clean(a.mistake || ''), a.sec, a.goal || r.goal]);
-    if (rows.length) { const sh = ss.getSheetByName('Answers'); sh.getRange(sh.getLastRow() + 1, 1, rows.length, rows[0].length).setValues(rows); }
-    // One row per player and skill with the latest rank.
-    const ranks = ss.getSheetByName('Ranks'), data = ranks.getDataRange().getValues();
-    let row = data.findIndex((d, i) => i > 0 && d[0] === player && d[1] === r.skill) + 1;
-    const goalAfter = r.goalAfter || r.goal;
-    if (!row) { ranks.appendRow([player, clean(r.skill), r.rankAfter, goalAfter, when, 1, r.rankedUp ? when : '']); }
-    else {
-      ranks.getRange(row, 3, 1, 3).setValues([[r.rankAfter, goalAfter, when]]);
-      ranks.getRange(row, 6).setValue((Number(data[row - 1][5]) || 0) + 1);
-      if (r.rankedUp) ranks.getRange(row, 7).setValue(when);
+    switch (r.action) {
+      case 'time': sheet('Time').appendRow([clean(r.date), clean(r.page), Number(r.seconds) || 0]); return json({ ok: true });
+      case 'review': sheet('Reviews').appendRow([clean(r.date), clean(r.card), clean(r.topic), Number(r.rating) || 0, Number(r.ivl) || 0]); return json({ ok: true });
+      case 'flashState': {
+        const old = getState('flash');
+        if (!old || (r.flash.updated || 0) >= (old.updated || 0)) setState('flash', r.flash);
+        return json({ ok: true });
+      }
+      case 'tutor': return json(tutor(r));
+      default: logFight(r); return json({ ok: true });
     }
-    return ContentService.createTextOutput('ok');
   } catch (err) {
-    return ContentService.createTextOutput('error: ' + err);
+    return json({ ok: false, error: String(err) });
   } finally { lock.releaseLock(); }
+}
+
+function tutor(r) {
+  const pw = PropertiesService.getScriptProperties().getProperty('TUTOR_PASSWORD');
+  if (!pw || r.password !== pw) return { ok: false, error: 'password' };
+  if (r.op === 'login') return { ok: true };
+  if (r.op === 'setTopic') return { ok: setTopic(r.topic, r.active) };
+  if (r.op === 'dashboard') {
+    const fights = rows('Fights', 200).map(f => [f[0], f[3], f[6], f[7], f[8], f[13]]);
+    return {
+      ok: true, topics: rows('Topics').map(t => ({ topic: t[0], active: t[1] === true, reason: t[2], updated: t[3] })),
+      flash: getState('flash'), reviews: rows('Reviews', 4000), time: rows('Time', 3000), packets: rows('Packets', 1500), fights,
+    };
+  }
+  // A graded answer sheet: one row per question, then turn on the topics of missed or hard questions.
+  if (r.op === 'packet') {
+    const sh = sheet('Packets');
+    const out = (r.rows || []).map(q => [clean(r.date), clean(r.day), clean(r.section), q.q, clean(q.topic), clean(q.answer || ''), clean(q.correct), clean(q.result), q.hard ? 'yes' : '']);
+    if (out.length) sh.getRange(sh.getLastRow() + 1, 1, out.length, out[0].length).setValues(out);
+    const turnedOn = [];
+    (r.activate || []).forEach(t => { if (TOPICS.includes(t) && !activeTopics().includes(t)) { setTopic(t, true, `From ${r.day} packet (${r.date})`); turnedOn.push(t); } });
+    return { ok: true, saved: out.length, turnedOn };
+  }
+  return { ok: false, error: 'unknown op' };
+}
+
+function logFight(r) {
+  const when = new Date(r.time || Date.now()), player = clean(String(r.player || 'unknown'));
+  const acc = r.questions ? r.correct / r.questions : 0;
+  const fights = sheet('Fights');
+  fights.appendRow([when, player, clean(r.skill), r.rank, r.goal, clean(r.monster), clean(r.result), r.questions, r.correct, r.onTime, r.crits,
+    acc, r.medianSec, r.avgSec, r.bestCombo, r.rankAfter, r.rankedUp ? 'yes' : '', r.seconds, r.freePlay ? 'yes' : '', clean(r.device)]);
+  fights.getRange(fights.getLastRow(), 12).setNumberFormat('0%');
+  const out = (r.answers || []).slice(0, 80).map(a => [when, player, clean(a.type || r.skill), r.rank, clean(a.q), clean(a.answer), clean(a.chosen), clean(a.result), clean(a.mistake || ''), a.sec, a.goal || r.goal]);
+  if (out.length) { const sh = sheet('Answers'); sh.getRange(sh.getLastRow() + 1, 1, out.length, out[0].length).setValues(out); }
 }
 
 /** Optional: run once to email yourself a summary every Sunday evening. */
@@ -79,24 +140,15 @@ function createWeeklyEmail() {
 }
 
 function weeklyEmail() {
-  const ss = SpreadsheetApp.getActive(), since = new Date(Date.now() - 7 * 864e5);
-  const fights = ss.getSheetByName('Fights').getDataRange().getValues().slice(1).filter(f => f[0] >= since);
-  const answers = ss.getSheetByName('Answers').getDataRange().getValues().slice(1).filter(a => a[0] >= since);
-  const ranks = ss.getSheetByName('Ranks').getDataRange().getValues().slice(1);
-  const lines = ['Math Quest: last 7 days', ''];
-  if (!fights.length) lines.push('No fights played this week.');
-  else {
-    const q = fights.reduce((s, f) => s + f[7], 0), c = fights.reduce((s, f) => s + f[8], 0);
-    const days = new Set(fights.map(f => Utilities.formatDate(f[0], Session.getScriptTimeZone(), 'yyyy-MM-dd'))).size;
-    lines.push(fights.length + ' fights on ' + days + ' day(s), ' + q + ' questions, ' + Math.round(100 * c / Math.max(1, q)) + '% correct.');
-    lines.push('Rank-ups this week: ' + (fights.filter(f => f[16] === 'yes').map(f => f[2] + ' to rank ' + f[15]).join('; ') || 'none'));
-    const missed = {};
-    answers.filter(a => a[7] === 'wrong').forEach(a => { const k = a[4] + '  (answer ' + a[5] + ')'; missed[k] = (missed[k] || 0) + 1; });
-    const top = Object.keys(missed).sort((a, b) => missed[b] - missed[a]).slice(0, 8);
-    if (top.length) { lines.push('', 'Most missed:'); top.forEach(k => lines.push('  ' + missed[k] + 'x  ' + k)); }
-  }
-  lines.push('', 'Current speed ranks:');
-  ranks.forEach(r => lines.push('  ' + r[0] + ', ' + r[1] + ': rank ' + r[2]));
-  lines.push('', ss.getUrl());
+  const since = Utilities.formatDate(new Date(Date.now() - 7 * 864e5), tz(), 'yyyy-MM-dd');
+  const inWeek = d => String(d).slice(0, 10) >= since;
+  const time = rows('Time').filter(r => inWeek(r[0])), reviews = rows('Reviews').filter(r => inWeek(r[0]));
+  const packets = rows('Packets').filter(r => inWeek(r[0])), fights = rows('Fights').filter(r => inWeek(r[0]));
+  const mins = p => Math.round(time.filter(r => r[1] === p).reduce((a, r) => a + Number(r[2]), 0) / 60);
+  const lines = ['Math Quest: last 7 days', '',
+    `Speed Study: ${mins('speed')} min, ${fights.length} fights`,
+    `Flashcards: ${mins('flash')} min, ${reviews.length} cards reviewed`,
+    `Packets: ${packets.filter(r => r[7] === 'right').length}/${packets.length} right, ${packets.filter(r => r[8] === 'yes').length} marked hard`,
+    '', `Flashcard topics on: ${activeTopics().join(', ') || 'none'}`, '', SpreadsheetApp.getActive().getUrl()];
   MailApp.sendEmail(Session.getEffectiveUser().getEmail(), 'Math Quest weekly summary', lines.join('\n'));
 }
