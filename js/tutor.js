@@ -1,7 +1,7 @@
 // Tutor page: set how much each topic is practiced (its Focus level), and see the student's progress.
 // Every request carries the password; the Google Apps Script checks it before returning anything.
-import { connected, postJSON, today } from './sync.js?v=1794803894';
-import { loadDeck } from './flash.js?v=1794803894';
+import { connected, postJSON, today } from './sync.js?v=1794804625';
+import { loadDeck } from './flash.js?v=1794804625';
 
 const $ = s => document.querySelector(s);
 const PW_KEY = 'math-quest-tutor-pw';
@@ -21,7 +21,29 @@ export async function tutorLogin(pw) {
   try { sessionStorage.setItem(PW_KEY, pw); } catch { /* ignore */ }
   return null;
 }
-export function tutorLogout() { try { sessionStorage.removeItem(PW_KEY); } catch { /* ignore */ } }
+export function tutorLogout() { try { sessionStorage.removeItem(PW_KEY); sessionStorage.removeItem(TEST_KEY); } catch { /* ignore */ } }
+
+// Test version: made-up data, no password, never talks to the sheet. Focus buttons change only this page.
+const TEST_KEY = 'math-quest-tutor-test';
+export const inTest = () => { try { return sessionStorage.getItem(TEST_KEY) === '1'; } catch { return false; } };
+export function startTest() { try { sessionStorage.setItem(TEST_KEY, '1'); } catch { /* ignore */ } }
+function testData(deck) {
+  const day = n => { const t = new Date(); t.setDate(t.getDate() - n); return today(t); };
+  const focus = { Sequences: 3, Algebra: 2, Fractions: 2, Percents: 1 };
+  const topics = deck.topics.map(t => ({ topic: t, focus: focus[t] || 0, reason: focus[t] ? 'Test data' : '' }));
+  const time = [], reviews = [], fights = [], states = {};
+  for (let i = 1; i <= 9; i++) {
+    const g = new Date(day(i) + 'T12:00').getDay(); if (g === 0 || g === 6) continue;
+    time.push([day(i), 'speed', 600 + 90 * i], [day(i), 'flash', 900 - 40 * i]);
+    deck.topics.slice(0, 6).forEach((t, j) => reviews.push([day(i), 'x', t, (i + j) % 4 ? 3 : 1]));
+    fights.push([day(i), Math.max(1, 6 - i), i % 3 ? 'Won' : 'Lost', 10, 7 + (i % 4), 4.2 + i / 10]);
+  }
+  deck.cards.slice(0, 60).forEach((c, i) => { states[c.id] = { state: 'review', ivl: i % 3 ? 4 : 25 }; });
+  const pk = [[1, 'Quantitative Skills', 'Sequences', 'a', 'd', 'wrong', 'no'], [2, 'Quantitative Skills', 'Fractions', 'd', 'd', 'right', 'yes'],
+    [3, 'Mathematics', 'Percents', '', 'c', 'blank', 'no'], [4, 'Mathematics', 'Algebra', 'b', 'b', 'right', 'no']];
+  const packets = pk.map(r => [day(2), 'Monday', r[1], r[0], r[2], r[3], r[4], r[5], r[6]]);
+  return { ok: true, topics, time, reviews, fights: fights.reverse(), packets, flash: { states } };
+}
 
 const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const dayName = d => new Date(d + 'T12:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
@@ -29,6 +51,7 @@ const asDay = v => (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}/.test(v) ? v.sl
 
 export async function openTutor() {
   const box = $('#tutor-body');
+  if (inTest()) { const deck = await loadDeck(); render(testData(deck), deck); return; }
   if (!connected()) {
     box.innerHTML = `<div class="t-card"><h2>Connect the Google Sheet</h2>
       <p>The tutor page reads Victoria's progress from your private Google Sheet, which isn't connected yet.
@@ -87,7 +110,7 @@ function render(d, deck) {
     ${fights.map(f => `<tr><td>${dayName(asDay(f[0]))}</td><td>${f[1]}</td><td>${esc(f[2])}</td><td>${f[4]}/${f[3]}</td><td>${Number(f[5]).toFixed(1)}s</td></tr>`).join('')}</table>`
     : '<p class="t-muted">No Speed Study fights yet.</p>';
 
-  $('#tutor-body').innerHTML = `
+  $('#tutor-body').innerHTML = (inTest() ? `<div class="t-card t-test"><b>Test version.</b> Everything here is made up, and nothing you click is saved or sent to Victoria. Sign out to leave.</div>` : '') + `
     <div class="t-card"><h2>Last two weeks</h2><p class="t-muted small">Goal: 15 minutes each of Speed Study and Flashcards every weekday.</p>${activity}</div>
     <div class="t-card"><h2>Flashcard topics</h2><p class="t-muted small">All topics are always in Victoria's flashcards. Focus (0 to 5) makes a topic come up more often in Flashcards and Speed Study.
       Each missed or Hard packet question raises it by 1 (by 2 at most per packet), and a clean packet lowers it by 1. Speed Study uses Fractions, Decimals, Conversions, Percents and Geometry.</p>${topics}</div>
@@ -100,7 +123,8 @@ function render(d, deck) {
     btns.forEach(b => { b.disabled = true; });
     val.textContent = want;
     let now = before;
-    try {
+    if (inTest()) now = want;
+    else try {
       const r = await postJSON({ action: 'tutor', op: 'setFocus', password: savedPassword(), topic: box.dataset.topic, focus: want });
       if (!r.ok) throw new Error();
       now = Number(r.focus ?? want);

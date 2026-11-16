@@ -1,10 +1,10 @@
 // Flashcards page: Anki-style review of the whole HSPT deck. Topics with a higher Focus level (raised by
 // missed or Hard packet questions) get their cards sooner and more often.
 // Progress is saved on the device and copied to the tutor's sheet, so it carries between sessions.
-import { answer, preview, queue } from './srs.js?v=1794803894';
-import { connected, getJSON, today } from './sync.js?v=1794803894';
-import { queueReport } from './report.js?v=1794803894';
-import { minutesToday, GOAL_MIN } from './timer.js?v=1794803894';
+import { answer, preview, queue } from './srs.js?v=1794804625';
+import { connected, getJSON, today } from './sync.js?v=1794804625';
+import { queueReport } from './report.js?v=1794804625';
+import { minutesToday, GOAL_MIN } from './timer.js?v=1794804625';
 
 const KEY = 'math-quest-flash-v1';
 // Used until the sheet answers: all topics on, with her known weak spots from the class practice tests.

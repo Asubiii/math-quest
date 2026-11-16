@@ -291,3 +291,6 @@ body:has(#battle:not([hidden])) .credits { display: none; }
 .f-btn:disabled { opacity: .35; cursor: default; }
 .f-btn:focus-visible { outline: 2px solid rgb(var(--hi)); }
 .f-val { min-width: 18px; text-align: center; font-weight: 800; font-size: 16px; }
+
+#tutor-test { margin-top: 12px; width: 100%; background: none; border: none; box-shadow: none; text-decoration: underline; font-size: 14px; opacity: .8; }
+.t-test { background: #fff7d6; border: 1px solid #e8c95a; color: #5a4300; }
