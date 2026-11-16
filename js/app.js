@@ -1,10 +1,11 @@
 // Entry point: login choice (student or tutor), the student home with its two pages, and the tutor page.
-import { openSpeed, show } from './main.js?v=1794804625';
-import { state, persist, goalFor } from './progress.js?v=1794804625';
-import { MONSTERS, loadManifest, paintMonster } from './battle.js?v=1794804625';
-import { openFlash, summary, pull, pushNow } from './flash.js?v=1794804625';
-import { openTutor, tutorLogin, tutorLogout, savedPassword, startTest, inTest } from './tutor.js?v=1794804625';
-import { startTiming, stopTiming, minutesToday, GOAL_MIN } from './timer.js?v=1794804625';
+import { TEST, enterTest, leaveTest } from './testmode.js?v=1794804868';
+import { openSpeed, show } from './main.js?v=1794804868';
+import { state, persist, goalFor } from './progress.js?v=1794804868';
+import { MONSTERS, loadManifest, paintMonster } from './battle.js?v=1794804868';
+import { openFlash, summary, pull, pushNow } from './flash.js?v=1794804868';
+import { openTutor, tutorLogin, tutorLogout, savedPassword } from './tutor.js?v=1794804868';
+import { startTiming, stopTiming, minutesToday, GOAL_MIN } from './timer.js?v=1794804868';
 
 const $ = s => document.querySelector(s);
 const ROLE_KEY = 'math-quest-role';
@@ -23,7 +24,7 @@ $('#login-tutor').addEventListener('click', () => {
   $('.login-choices').hidden = true; $('#tutor-form').hidden = false; $('#tutor-err').textContent = ''; $('#tutor-pw').value = ''; $('#tutor-pw').focus();
 });
 $('#tutor-cancel').addEventListener('click', login);
-$('#tutor-test').addEventListener('click', () => { startTest(); setRole('tutor'); tutor(); });
+$('#tutor-test').addEventListener('click', enterTest);
 $('#tutor-form').addEventListener('submit', async e => {
   e.preventDefault();
   $('#tutor-err').textContent = 'Checking…';
@@ -50,7 +51,7 @@ $('#go-speed').addEventListener('click', () => { startTiming('speed'); openSpeed
 $('#go-flash').addEventListener('click', () => { startTiming('flash'); show('flash'); openFlash(); });
 $('#speed-home').addEventListener('click', home);
 $('#flash-home').addEventListener('click', () => { pushNow(); home(); });
-$('#signout').addEventListener('click', () => { setRole(null); login(); });
+$('#signout').addEventListener('click', () => { if (TEST) return leaveTest(); setRole(null); login(); });
 
 // ---------- Tutor ----------
 function tutor() { stopTiming(); show('tutor'); openTutor(); }
@@ -59,7 +60,9 @@ $('#tutor-signout').addEventListener('click', () => { tutorLogout(); setRole(nul
 
 // ---------- Boot ----------
 const role = getRole();
-if (role === 'student') { state().name = 'Victoria'; home(); }
-else if (role === 'tutor' && (savedPassword() || inTest())) tutor();
+$('#test-banner').hidden = !TEST;
+if (TEST) { state().name = 'Victoria'; home(); }
+else if (role === 'student') { state().name = 'Victoria'; home(); }
+else if (role === 'tutor' && savedPassword()) tutor();
 else login();
 export { goalFor };

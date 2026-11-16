@@ -10,7 +10,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Nunito:wght@600;700;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=1794804625">
+<link rel="stylesheet" href="css/style.css?v=1794804868">
 </head>
 <body>
 
@@ -27,7 +27,7 @@
       <input id="tutor-pw" type="password" autocomplete="current-password" required>
       <div id="tutor-err" class="err"></div>
       <div class="row"><button class="btn primary" type="submit">Sign in</button><button class="btn" type="button" id="tutor-cancel">Back</button></div>
-      <button class="btn link" type="button" id="tutor-test">Try a test version (made-up data, nothing is saved)</button>
+      <button class="btn link" type="button" id="tutor-test">Test the game (nothing is saved to Victoria's progress)</button>
     </form>
   </div>
 </section>
@@ -37,6 +37,7 @@
     <div><h1>Hi, Victoria!</h1><div class="sub">About 15 minutes on each, every weekday.</div></div>
     <button id="signout" class="btn small">Sign out</button>
   </header>
+  <div class="test-banner" id="test-banner" hidden><b>Test mode.</b> Play as much as you like: this uses a separate save and sends nothing to the sheet. Sign out to leave.</div>
   <div class="home-cards">
     <button id="go-speed" class="home-card speed">
       <div class="hc-art"><div class="portrait" id="home-mon"></div></div>
@@ -154,6 +155,6 @@
 </dialog>
 
 <footer class="credits">Character and monster art from the Salita project. Human character base: Open Peeps by Pablo Stanley (CC0).</footer>
-<script type="module" src="js/app.js?v=1794804625"></script>
+<script type="module" src="js/app.js?v=1794804868"></script>
 </body>
 </html>

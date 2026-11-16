@@ -1,5 +1,6 @@
 // Saved progress on this device: nickname, speed rank per skill, fact memory (spaced repetition),
 // missed questions to retry, and which monsters have been beaten in which skill.
+import { sk } from './testmode.js?v=1794804868';
 
 export const GOALS = [60, 45, 35, 28, 22, 17, 13, 10, 8, 6];     // seconds per answer, rank 1..10
 export const GOAL_SCALE = { all: 1, compare: 1, frac2dec: 1, pct: 1, angles: 1.5 }; // angle sums take a step or two of arithmetic
@@ -8,7 +9,7 @@ export const goalFor = (skill, rank) => GOALS[Math.min(rank, MAX_RANK) - 1] * GO
 export const baseDamage = rank => 10 + 3 * (Math.min(rank, MAX_RANK) - 1);
 export const MIXED_UNLOCK = 1; // rank needed in each of the other three skills (1 = always open)
 
-const KEY = 'math-quest-save-v1';
+const KEY = sk('math-quest-save-v1');
 const blank = () => ({
   name: '', created: Date.now(), device: Math.random().toString(36).slice(2, 10),
   ranks: { all: 1 },

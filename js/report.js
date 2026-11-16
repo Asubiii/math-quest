@@ -1,13 +1,14 @@
 // Sends each finished fight to the tutor's Google Sheet (via a Google Apps Script web app).
 // Results queue on the device first, so nothing is lost when offline; the queue retries on the next load.
+import { TEST } from './testmode.js?v=1794804868';
 
-import { REPORT_URL } from './config.js?v=1794804625';
+import { REPORT_URL } from './config.js?v=1794804868';
 
 const QKEY = 'math-quest-outbox-v1';
 const load = () => { try { return JSON.parse(localStorage.getItem(QKEY)) || []; } catch { return []; } };
 const store = q => { try { localStorage.setItem(QKEY, JSON.stringify(q.slice(-3000))); } catch { /* ignore */ } };
 
-export function queueReport(record) { const q = load(); q.push(record); store(q); return flush(); }
+export function queueReport(record) { if (TEST) return; const q = load(); q.push(record); store(q); return flush(); }
 
 let flushing = false;
 export async function flush() {
