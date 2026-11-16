@@ -1,9 +1,10 @@
 /**
- * Math Quest backend: a private Google Sheet that stores Victoria's progress and the tutor's
- * flashcard topic switches. The website talks to it through this web app.
+ * Math Quest backend: a private Google Sheet that stores Victoria's progress and how much each
+ * topic should be practiced (its Focus level). The website talks to it through this web app.
  *
  * Setup (once):
  *   1. New Google Sheet > Extensions > Apps Script > replace everything with this file.
+ *      (Or a standalone script at script.google.com: put the sheet's ID in SHEET_ID below.)
  *   2. Put the tutor password between the quotes on the TUTOR_PASSWORD line below. Save.
  *   3. Run "setup" and approve the permission prompt.
  *   4. Deploy > New deployment > type "Web app", Execute as "Me", Who has access "Anyone" > Deploy.
@@ -11,10 +12,11 @@
  * Optional: run "createWeeklyEmail" once to get a Sunday summary email.
  */
 
+const SHEET_ID = ''; // empty when the script is attached to the sheet itself
 const TUTOR_PASSWORD = ''; // used by setup() only; stored privately in Script Properties
 
 const SHEETS = {
-  Topics: ['Topic', 'Active', 'Why it is on', 'Updated'],
+  Topics: ['Topic', 'Active', 'Focus (0 normal, up to 5)', 'Why', 'Updated'],
   Packets: ['Date', 'Day', 'Section', 'Question', 'Topic', 'Her answer', 'Correct answer', 'Result', 'Marked hard'],
   Time: ['Date', 'Page', 'Seconds'],
   Reviews: ['Date', 'Card', 'Topic', 'Rating (1 again, 2 hard, 3 good, 4 easy)', 'Next interval (days)'],
@@ -25,17 +27,21 @@ const SHEETS = {
 };
 const TOPICS = ['Fractions', 'Decimals', 'Conversions', 'Units', 'Ratios', 'Percents', 'Number Theory', 'Operations', 'Exponents',
   'Sequences', 'Roman Numerals', 'Algebra', 'Graphing', 'Geometry', 'Circles', 'Solids', 'Statistics', 'Probability'];
-const START_ON = ['Fractions', 'Decimals', 'Conversions'];
+// Every topic is on. Focus makes a topic come up more often in Flashcards and Speed Study:
+// missed or Hard packet questions raise it, a clean packet lowers it. These are her known weak spots
+// from the class practice tests (Isaac, Nov 2026): sequences, algebra word problems, comparisons.
+const START_FOCUS = { Sequences: 2, Algebra: 2, Operations: 2, Fractions: 1, Percents: 1, Decimals: 1 };
+const MAX_FOCUS = 5;
 
 function setup() {
-  const ss = SpreadsheetApp.getActive();
+  const ss = book();
   Object.keys(SHEETS).forEach(name => {
     const sh = ss.getSheetByName(name) || ss.insertSheet(name);
     if (sh.getLastRow() === 0) { sh.appendRow(SHEETS[name]); sh.setFrozenRows(1); sh.getRange(1, 1, 1, SHEETS[name].length).setFontWeight('bold'); }
   });
   const topics = ss.getSheetByName('Topics');
   if (topics.getLastRow() === 1) {
-    topics.getRange(2, 1, TOPICS.length, 4).setValues(TOPICS.map(t => [t, START_ON.includes(t), START_ON.includes(t) ? 'Starting topic' : '', new Date()]));
+    topics.getRange(2, 1, TOPICS.length, 5).setValues(TOPICS.map(t => [t, true, START_FOCUS[t] || 0, START_FOCUS[t] ? 'Weak spot on class practice tests' : '', new Date()]));
     topics.getRange(2, 2, TOPICS.length, 1).insertCheckboxes();
   }
   if (TUTOR_PASSWORD) PropertiesService.getScriptProperties().setProperty('TUTOR_PASSWORD', TUTOR_PASSWORD);
@@ -43,8 +49,9 @@ function setup() {
   if (blank && blank.getLastRow() === 0) ss.deleteSheet(blank);
 }
 
+const book = () => (SHEET_ID ? SpreadsheetApp.openById(SHEET_ID) : SpreadsheetApp.getActive());
 const json = x => ContentService.createTextOutput(JSON.stringify(x)).setMimeType(ContentService.MimeType.JSON);
-const sheet = name => { const ss = SpreadsheetApp.getActive(); if (!ss.getSheetByName(name)) setup(); return ss.getSheetByName(name); };
+const sheet = name => { const ss = book(); if (!ss.getSheetByName(name)) setup(); return ss.getSheetByName(name); };
 const clean = v => (typeof v === 'string' ? v.slice(0, 300).replace(/^[=+\-@]/, "'$&") : v); // never store a formula from outside
 const tz = () => Session.getScriptTimeZone();
 const cell = v => (v instanceof Date ? Utilities.formatDate(v, tz(), "yyyy-MM-dd'T'HH:mm:ss") : v);
@@ -64,16 +71,31 @@ function setState(key, value) {
   if (i > 0) sh.getRange(i + 1, 1, 1, 3).setValues([row]); else sh.appendRow(row);
 }
 const activeTopics = () => rows('Topics').filter(r => r[1] === true).map(r => r[0]);
-function setTopic(topic, active, reason) {
+const focusMap = () => Object.fromEntries(rows('Topics').map(r => [r[0], Number(r[2]) || 0]));
+const bumpedMap = () => getState('bumped') || {};
+function topicRow(topic) {
   const sh = sheet('Topics'), data = sh.getDataRange().getValues(), i = data.findIndex((r, j) => j > 0 && r[0] === topic);
-  if (i < 1) return false;
-  sh.getRange(i + 1, 2, 1, 3).setValues([[!!active, clean(reason || (active ? 'Turned on by tutor' : '')), new Date()]]);
+  return i < 1 ? null : { sh, n: i + 1, row: data[i] };
+}
+function setTopic(topic, active, reason) {
+  const t = topicRow(topic);
+  if (!t) return false;
+  t.sh.getRange(t.n, 2).setValue(!!active);
+  t.sh.getRange(t.n, 4, 1, 2).setValues([[clean(reason || (active ? 'Turned on by tutor' : 'Turned off by tutor')), new Date()]]);
   return true;
+}
+function setFocus(topic, focus, reason) {
+  const t = topicRow(topic);
+  if (!t) return false;
+  const f = Math.max(0, Math.min(MAX_FOCUS, Math.round(Number(focus) || 0)));
+  t.sh.getRange(t.n, 3).setValue(f);
+  t.sh.getRange(t.n, 4, 1, 2).setValues([[clean(reason || 'Set by tutor'), new Date()]]);
+  return f;
 }
 
 function doGet(e) {
   const action = e && e.parameter && e.parameter.action;
-  if (action === 'student') return json({ topics: activeTopics(), flash: getState('flash') });
+  if (action === 'student') return json({ topics: activeTopics(), focus: focusMap(), bumped: bumpedMap(), flash: getState('flash') });
   return ContentService.createTextOutput('Math Quest backend is running.');
 }
 
@@ -103,21 +125,40 @@ function tutor(r) {
   if (!pw || r.password !== pw) return { ok: false, error: 'password' };
   if (r.op === 'login') return { ok: true };
   if (r.op === 'setTopic') return { ok: setTopic(r.topic, r.active) };
+  if (r.op === 'setFocus') { const f = setFocus(r.topic, r.focus); return { ok: f !== false, focus: f }; }
   if (r.op === 'dashboard') {
     const fights = rows('Fights', 200).map(f => [f[0], f[3], f[6], f[7], f[8], f[13]]);
     return {
-      ok: true, topics: rows('Topics').map(t => ({ topic: t[0], active: t[1] === true, reason: t[2], updated: t[3] })),
+      ok: true, topics: rows('Topics').map(t => ({ topic: t[0], active: t[1] === true, focus: Number(t[2]) || 0, reason: t[3], updated: t[4] })),
       flash: getState('flash'), reviews: rows('Reviews', 4000), time: rows('Time', 3000), packets: rows('Packets', 1500), fights,
     };
   }
-  // A graded answer sheet: one row per question, then turn on the topics of missed or hard questions.
+  // A graded answer sheet: one row per question. Each missed or Hard question raises its topic's Focus
+  // by 1 (2 if both), so it comes up more often; a topic answered cleanly in this packet drops by 1.
+  // Re-sending the same day's sheet replaces it instead of counting twice.
   if (r.op === 'packet') {
     const sh = sheet('Packets');
-    const out = (r.rows || []).map(q => [clean(r.date), clean(r.day), clean(r.section), q.q, clean(q.topic), clean(q.answer || ''), clean(q.correct), clean(q.result), q.hard ? 'yes' : '']);
+    const old = sh.getDataRange().getValues();
+    for (let i = old.length - 1; i >= 1; i--) if (cell(old[i][0]).slice(0, 10) === String(r.date).slice(0, 10)) sh.deleteRow(i + 1);
+    const out = (r.rows || []).map(q => [clean(r.date), clean(r.day), clean(q.section || r.section), q.q, clean(q.topic), clean(q.answer || ''), clean(q.correct), clean(q.result), q.hard ? 'yes' : '']);
     if (out.length) sh.getRange(sh.getLastRow() + 1, 1, out.length, out[0].length).setValues(out);
-    const turnedOn = [];
-    (r.activate || []).forEach(t => { if (TOPICS.includes(t) && !activeTopics().includes(t)) { setTopic(t, true, `From ${r.day} packet (${r.date})`); turnedOn.push(t); } });
-    return { ok: true, saved: out.length, turnedOn };
+    const done = getState('packetsCounted') || {}, focus = focusMap(), bumped = bumpedMap(), changes = {};
+    if (!done[r.date]) {
+      const up = {}, seen = new Set();
+      (r.rows || []).forEach(q => {
+        if (!TOPICS.includes(q.topic)) return;
+        seen.add(q.topic);
+        const n = (q.result !== 'right' ? 1 : 0) + (q.hard ? 1 : 0);
+        if (n) up[q.topic] = (up[q.topic] || 0) + n;
+      });
+      seen.forEach(t => {
+        const before = focus[t] || 0, after = Math.max(0, Math.min(MAX_FOCUS, before + (up[t] ? Math.min(up[t], 2) : -1)));
+        if (after !== before) { setFocus(t, after, `${up[t] ? 'Missed or Hard' : 'Clean'} on ${r.day} packet (${r.date})`); changes[t] = after; }
+        if (up[t]) bumped[t] = Date.now();
+      });
+      done[r.date] = true; setState('packetsCounted', done); setState('bumped', bumped);
+    }
+    return { ok: true, saved: out.length, focus: changes };
   }
   return { ok: false, error: 'unknown op' };
 }
@@ -149,6 +190,6 @@ function weeklyEmail() {
     `Speed Study: ${mins('speed')} min, ${fights.length} fights`,
     `Flashcards: ${mins('flash')} min, ${reviews.length} cards reviewed`,
     `Packets: ${packets.filter(r => r[7] === 'right').length}/${packets.length} right, ${packets.filter(r => r[8] === 'yes').length} marked hard`,
-    '', `Flashcard topics on: ${activeTopics().join(', ') || 'none'}`, '', SpreadsheetApp.getActive().getUrl()];
+    '', `Flashcard topics on: ${activeTopics().join(', ') || 'none'}`, '', book().getUrl()];
   MailApp.sendEmail(Session.getEffectiveUser().getEmail(), 'Math Quest weekly summary', lines.join('\n'));
 }

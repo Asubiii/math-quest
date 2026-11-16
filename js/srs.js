@@ -1,8 +1,8 @@
 // Anki-style spaced repetition (the SM-2 scheduler Anki uses), with Anki's default settings:
 // learning steps 1m and 10m, relearning step 10m, graduating interval 1 day, easy interval 4 days,
-// starting ease 250%, 10 new cards a day.
+// starting ease 250%. 15 new cards a day (Anki's default is 20).
 
-export const NEW_PER_DAY = 10;
+export const NEW_PER_DAY = 15; // enough for a 15-minute session
 const LEARN = [1, 10], RELEARN = [10], GRAD = 1, EASY = 4, MIN = 60000, DAY = 86400000;
 
 const startOfDay = (t = Date.now()) => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
@@ -44,13 +44,25 @@ export function preview(c, rating) {
   return d < 30 ? `${d}d` : d < 365 ? `${Math.round(d / 30)}mo` : `${(d / 365).toFixed(1)}y`;
 }
 
-// What to study next. cards: [{id, ...}], states: {id: state}, newToday: count already introduced today.
-export function queue(cards, states, newToday, now = Date.now()) {
+// Stable pseudo-random number in [0, 1) from a string, so the new-card order holds for a whole day.
+function hash01(str) { let h = 2166136261; for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return ((h >>> 0) % 1e6) / 1e6; }
+
+// What to study next. cards: [{id, topic, ...}], states: {id: state}, newToday: count already introduced today.
+// opts.weight(card) >= 1: topics with more Focus get their new cards first and their reviews earlier
+//   (a weight-3 topic's review comes due after a third of its interval).
+// opts.bumped(card): time the card's topic was last missed or marked Hard on a packet; a card not
+//   reviewed since then comes due again now.
+export function queue(cards, states, newToday, now = Date.now(), opts = {}) {
   const st = id => states[id] || fresh();
+  const w = c => Math.max(1, (opts.weight && opts.weight(c)) || 1), bumped = c => (opts.bumped && opts.bumped(c)) || 0;
   const learning = cards.filter(c => ['learn', 'relearn'].includes(st(c.id).state));
   const learnNow = learning.filter(c => st(c.id).due <= now).sort((a, b) => st(a.id).due - st(b.id).due);
-  const reviews = cards.filter(c => st(c.id).state === 'review' && st(c.id).due <= now);
-  const news = cards.filter(c => st(c.id).state === 'new').slice(0, Math.max(0, NEW_PER_DAY - newToday));
+  const isDue = c => { const s = st(c.id); return s.due - (1 - 1 / w(c)) * s.ivl * DAY <= now || bumped(c) > (s.last || 0); };
+  const reviews = cards.filter(c => st(c.id).state === 'review' && isDue(c)).sort((a, b) => w(b) - w(a) || st(a.id).due - st(b.id).due);
+  const day = new Date(now).toDateString();
+  const news = cards.filter(c => st(c.id).state === 'new')
+    .map(c => [c, -Math.log(1 - hash01(c.id + day)) / w(c)]).sort((a, b) => a[1] - b[1]).map(x => x[0])
+    .slice(0, Math.max(0, NEW_PER_DAY - newToday));
   const laterLearn = learning.filter(c => st(c.id).due > now).sort((a, b) => st(a.id).due - st(b.id).due);
   const next = learnNow[0] || reviews[0] || news[0] || null;
   return { next, counts: { new: news.length, learn: learning.length, due: reviews.length }, nextLearnAt: laterLearn[0] ? st(laterLearn[0].id).due : null };

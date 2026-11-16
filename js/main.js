@@ -1,9 +1,10 @@
 // Screens and the fight loop.
-import { SKILLS, makeQuestion, pickType } from './questions.js?v=1794692624';
-import { state, persist, goalFor, baseDamage, MAX_RANK, memoryFor, recordAnswer, awardStar } from './progress.js?v=1794692624';
-import { Scene, MONSTERS, BACKDROPS, bgUrl, loadManifest, paintMonster } from './battle.js?v=1794692624';
-import { queueReport, flush } from './report.js?v=1794692624';
-import { sfx, unlock, isMuted, setMuted } from './sfx.js?v=1794692624';
+import { SKILLS, makeQuestion, pickType } from './questions.js?v=1794803894';
+import { state, persist, goalFor, baseDamage, MAX_RANK, memoryFor, recordAnswer, awardStar } from './progress.js?v=1794803894';
+import { Scene, MONSTERS, BACKDROPS, bgUrl, loadManifest, paintMonster } from './battle.js?v=1794803894';
+import { queueReport, flush } from './report.js?v=1794803894';
+import { flashData } from './flash.js?v=1794803894';
+import { sfx, unlock, isMuted, setMuted } from './sfx.js?v=1794803894';
 
 const $ = s => document.querySelector(s);
 const MODE = 'all', SKILL_ORDER = [MODE]; // one game mode that mixes every question type
@@ -111,7 +112,7 @@ const comboBonus = () => Math.min(1, Math.floor(F.combo / 5) * 0.25);
 
 function nextQuestion() {
   if (F.over) return;
-  const type = pickType(F.types); F.types.push(type);
+  const type = pickType(F.types, flashData().focus); F.types.push(type);
   const q = makeQuestion(type, F.rank, memoryFor(F.recent));
   F.goal = goalFor(type, F.rank); $('#goal').textContent = fmt(F.goal);
   F.q = q; F.late = false; F.locked = false;

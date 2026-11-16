@@ -2,15 +2,22 @@
 // A question: { skill, key, prompt (HTML), promptText, choices:[{html,text,correct,tag}], layout, tip (HTML) }
 // Wrong choices carry a `tag` naming the mistake they represent, which goes to the tutor report.
 
-import { angles } from './angles.js?v=1794692624';
-import { R, val, eq, cmp, mul, key, decStr, pctStr, fracHTML, fracText, terminates, rand, pick, shuffle } from './numbers.js?v=1794692624';
+import { angles } from './angles.js?v=1794803894';
+import { R, val, eq, cmp, mul, key, decStr, pctStr, fracHTML, fracText, terminates, rand, pick, shuffle } from './numbers.js?v=1794803894';
 
+// topics: the flashcard topics each question type practices. A topic's Focus level (raised when she
+// misses a packet question or marks it Hard) makes the matching question type come up more often.
 export const SKILLS = {
-  compare: { name: 'Compare fractions', weight: 3 },
-  frac2dec: { name: 'Fraction to decimal', weight: 3 },
-  pct: { name: 'Decimal to percent', weight: 1 }, // only a few of these
-  angles: { name: 'Missing angles', weight: 3 },
+  compare: { name: 'Compare fractions', weight: 3, topics: ['Fractions'] },
+  frac2dec: { name: 'Fraction to decimal', weight: 3, topics: ['Decimals', 'Conversions', 'Fractions'] },
+  pct: { name: 'Decimal to percent', weight: 1, topics: ['Percents', 'Conversions'] }, // only a few of these
+  angles: { name: 'Missing angles', weight: 3, topics: ['Geometry'] },
 };
+// Focus 0 keeps the base mix; each level of the most-focused matching topic adds half the base share again.
+export function skillWeight(k, focus = {}) {
+  const f = Math.max(0, ...SKILLS[k].topics.map(t => Number(focus[t]) || 0));
+  return SKILLS[k].weight * (1 + f / 2);
+}
 
 // ---------- Choice helpers ----------
 function choiceSet(correct, cands, n = 3) {
@@ -131,10 +138,12 @@ function compare(rank) {
 
 const GEN = { compare, frac2dec, pct, angles };
 // Weighted pick of the next question type, never the same type three times in a row.
-export function pickType(lastTypes) {
+export function pickType(lastTypes, focus = {}) {
   const block = lastTypes.length >= 2 && lastTypes[lastTypes.length - 1] === lastTypes[lastTypes.length - 2] ? lastTypes[lastTypes.length - 1] : null;
-  const bag = Object.keys(GEN).filter(k => k !== block).flatMap(k => Array(SKILLS[k].weight).fill(k));
-  return pick(bag);
+  const ks = Object.keys(GEN).filter(k => k !== block), ws = ks.map(k => skillWeight(k, focus));
+  let x = Math.random() * ws.reduce((a, b) => a + b, 0);
+  for (let i = 0; i < ks.length; i++) { x -= ws[i]; if (x < 0) return ks[i]; }
+  return ks[ks.length - 1];
 }
 export function makeQuestion(skill, rank, mem) {
   const retry = mem.takeRetry(skill);

@@ -1,17 +1,21 @@
-// Flashcards page: Anki-style review of the HSPT deck, limited to the topics the tutor has turned on.
+// Flashcards page: Anki-style review of the whole HSPT deck. Topics with a higher Focus level (raised by
+// missed or Hard packet questions) get their cards sooner and more often.
 // Progress is saved on the device and copied to the tutor's sheet, so it carries between sessions.
-import { answer, preview, queue } from './srs.js?v=1794692624';
-import { connected, getJSON, today } from './sync.js?v=1794692624';
-import { queueReport } from './report.js?v=1794692624';
-import { minutesToday, GOAL_MIN } from './timer.js?v=1794692624';
+import { answer, preview, queue } from './srs.js?v=1794803894';
+import { connected, getJSON, today } from './sync.js?v=1794803894';
+import { queueReport } from './report.js?v=1794803894';
+import { minutesToday, GOAL_MIN } from './timer.js?v=1794803894';
 
 const KEY = 'math-quest-flash-v1';
-export const DEFAULT_TOPICS = ['Fractions', 'Decimals', 'Conversions'];
+// Used until the sheet answers: all topics on, with her known weak spots from the class practice tests.
+export const DEFAULT_FOCUS = { Sequences: 2, Algebra: 2, Operations: 2, Fractions: 1, Percents: 1, Decimals: 1 };
 const $ = s => document.querySelector(s);
 
 let deck = null, cur = null, shown = false, pushTimer = null;
 let data = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || null; } catch { return null; } })()
-  || { states: {}, topics: DEFAULT_TOPICS, newDay: '', newCount: 0, updated: 0 };
+  || { states: {}, topics: null, newDay: '', newCount: 0, updated: 0 };
+if (!Array.isArray(data.topics) || data.topics.length < 4) data.topics = null; // old version: only 3 topics were on
+data.focus = data.focus || { ...DEFAULT_FOCUS }; data.bumped = data.bumped || {};
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch { /* ignore */ } };
 
 export async function loadDeck() { if (!deck) deck = await fetch('assets/cards.json').then(r => r.json()); return deck; }
@@ -22,6 +26,8 @@ export async function pull() {
   try {
     const r = await getJSON('student');
     if (Array.isArray(r.topics)) data.topics = r.topics;
+    if (r.focus) data.focus = r.focus;
+    if (r.bumped) data.bumped = r.bumped;
     if (r.flash && (r.flash.updated || 0) > (data.updated || 0)) Object.assign(data, r.flash);
     save();
     return true;
@@ -38,19 +44,25 @@ export function pushNow() {
 }
 document.addEventListener('visibilitychange', () => { if (document.hidden && pushTimer) pushNow(); });
 
-const activeCards = () => deck.cards.filter(c => data.topics.includes(c.topic));
+const topicsOn = () => data.topics || deck.topics;
+const activeCards = () => deck.cards.filter(c => topicsOn().includes(c.topic));
+// Focus 0 -> weight 1 (normal); each Focus level adds two more shares (Focus 2 -> 5 times as likely).
+export const focusWeight = t => 1 + 2 * Math.max(0, Number((data.focus || {})[t]) || 0);
+const qOpts = { weight: c => focusWeight(c.topic), bumped: c => (data.bumped || {})[c.topic] || 0 };
+const nextUp = () => queue(activeCards(), data.states, newToday(), Date.now(), qOpts);
 function newToday() { if (data.newDay !== today()) { data.newDay = today(); data.newCount = 0; } return data.newCount; }
 export async function summary() {
   await loadDeck();
-  const q = queue(activeCards(), data.states, newToday());
-  return { ...q.counts, topics: data.topics.length };
+  const q = nextUp();
+  return { ...q.counts, topics: topicsOn().length };
 }
 
 export async function openFlash() {
   await loadDeck();
-  await pull();
   shown = false;
-  render();
+  render();                          // show saved cards at once; the sheet can take a few seconds
+  const before = cur && cur.id;
+  if (await pull() && !shown && !$('#flash').hidden && (cur && cur.id) === before) render();
 }
 
 function cardHTML(c, back) {
@@ -64,19 +76,19 @@ function cardHTML(c, back) {
 }
 
 function render() {
-  const q = queue(activeCards(), data.states, newToday());
+  const q = nextUp();
   cur = q.next;
   $('#ak-new').textContent = q.counts.new; $('#ak-learn').textContent = q.counts.learn; $('#ak-due').textContent = q.counts.due;
   $('#ak-time').textContent = `${minutesToday('flash')} / ${GOAL_MIN} min today`;
   const card = $('#ak-card'), btns = $('#ak-buttons');
-  if (!data.topics.length) {
+  if (!topicsOn().length) {
     card.innerHTML = '<div class="ak-done"><h2>No topics yet</h2><p>Your tutor turns on topics from your practice packets. Check back after your next answer sheet.</p></div>';
     btns.innerHTML = ''; return;
   }
   if (!cur) {
     const wait = q.nextLearnAt ? Math.max(1, Math.ceil((q.nextLearnAt - Date.now()) / 60000)) : null;
     card.innerHTML = `<div class="ak-done"><h2>Done for now! 🎉</h2><p>${wait ? `A card you're still learning comes back in ${wait} minute${wait > 1 ? 's' : ''}.` : 'You finished today\'s cards. New ones unlock tomorrow.'}</p>
-      <p class="ak-topics">Topics: ${data.topics.join(', ')}</p></div>`;
+      <p class="ak-topics">Extra practice today: ${Object.entries(data.focus || {}).filter(([, f]) => f > 0).sort((a, b) => b[1] - a[1]).map(([t]) => t).join(', ') || 'none'}</p></div>`;
     btns.innerHTML = wait ? '<button class="btn" id="ak-refresh">Check again</button>' : '';
     if (wait) { $('#ak-refresh').onclick = render; clearTimeout(render.t); render.t = setTimeout(() => { if (!$('#flash').hidden) render(); }, Math.min(wait * 60000, 600000)); }
     return;
