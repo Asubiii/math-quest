@@ -294,3 +294,5 @@ body:has(#battle:not([hidden])) .credits { display: none; }
 
 #tutor-test { margin-top: 12px; width: 100%; background: none; border: none; box-shadow: none; text-decoration: underline; font-size: 14px; opacity: .8; }
 .test-banner { margin: 0 0 14px; padding: 10px 14px; border-radius: 10px; background: #fff7d6; border: 1px solid #e8c95a; color: #5a4300; font-size: 14px; }
+.prompt .words { font-size: clamp(19px, 4.6vw, 26px); font-weight: 700; line-height: 1.35; max-width: 30em; }
+.choice sup { font-size: .6em; }

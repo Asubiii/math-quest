@@ -1,10 +1,10 @@
 // Screens and the fight loop.
-import { SKILLS, makeQuestion, pickType } from './questions.js?v=1794804868';
-import { state, persist, goalFor, baseDamage, MAX_RANK, memoryFor, recordAnswer, awardStar } from './progress.js?v=1794804868';
-import { Scene, MONSTERS, BACKDROPS, bgUrl, loadManifest, paintMonster } from './battle.js?v=1794804868';
-import { queueReport, flush } from './report.js?v=1794804868';
-import { flashData } from './flash.js?v=1794804868';
-import { sfx, unlock, isMuted, setMuted } from './sfx.js?v=1794804868';
+import { SKILLS, makeQuestion, pickType } from './questions.js?v=1794806494';
+import { state, persist, goalFor, baseDamage, MAX_RANK, memoryFor, recordAnswer, awardStar } from './progress.js?v=1794806494';
+import { Scene, MONSTERS, BACKDROPS, bgUrl, loadManifest, paintMonster } from './battle.js?v=1794806494';
+import { queueReport, flush } from './report.js?v=1794806494';
+import { flashData } from './flash.js?v=1794806494';
+import { sfx, unlock, isMuted, setMuted } from './sfx.js?v=1794806494';
 
 const $ = s => document.querySelector(s);
 const MODE = 'all', SKILL_ORDER = [MODE]; // one game mode that mixes every question type
@@ -39,7 +39,7 @@ async function map() {
     card.innerHTML = `
       <div class="area-art"><div class="portrait"></div></div>
       <div class="area-info">
-        <div class="area-place">Fractions · Decimals · Percents · Angles</div>
+        <div class="area-place">Fractions · Decimals · Percents · Angles · Word problems</div>
         <div class="area-name">${mastered ? 'Free play' : `Fight the ${mon.name}`}</div>
         <div class="area-rank">${mastered ? 'Mastered! Free play' : `Speed Rank ${rank} · ${fmt(goalFor(skill, rank))} per answer`}</div>
         <div class="pips">${Array.from({ length: MAX_RANK }, (_, i) => `<i class="${i < rank - 1 || mastered ? 'on' : i === rank - 1 ? 'now' : ''}"></i>`).join('')}</div>

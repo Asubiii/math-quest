@@ -2,7 +2,7 @@
 import { makeQuestion } from '../js/questions.js';
 const mem = { pickKey: ks => ks[Math.floor(Math.random() * ks.length)], takeRetry: () => null };
 let bad = 0; const short = {};
-for (const skill of ['compare', 'frac2dec', 'pct', 'angles'])
+for (const skill of ['compare', 'frac2dec', 'pct', 'angles', 'words'])
   for (let rank = 1; rank <= 10; rank++)
     for (let i = 0; i < 1500; i++) {
       const q = makeQuestion(skill, rank, mem);

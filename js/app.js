@@ -1,11 +1,11 @@
 // Entry point: login choice (student or tutor), the student home with its two pages, and the tutor page.
-import { TEST, enterTest, leaveTest } from './testmode.js?v=1794804868';
-import { openSpeed, show } from './main.js?v=1794804868';
-import { state, persist, goalFor } from './progress.js?v=1794804868';
-import { MONSTERS, loadManifest, paintMonster } from './battle.js?v=1794804868';
-import { openFlash, summary, pull, pushNow } from './flash.js?v=1794804868';
-import { openTutor, tutorLogin, tutorLogout, savedPassword } from './tutor.js?v=1794804868';
-import { startTiming, stopTiming, minutesToday, GOAL_MIN } from './timer.js?v=1794804868';
+import { TEST, enterTest, leaveTest } from './testmode.js?v=1794806494';
+import { openSpeed, show } from './main.js?v=1794806494';
+import { state, persist, goalFor } from './progress.js?v=1794806494';
+import { MONSTERS, loadManifest, paintMonster } from './battle.js?v=1794806494';
+import { openFlash, summary, pull, pushNow } from './flash.js?v=1794806494';
+import { openTutor, tutorLogin, tutorLogout, savedPassword } from './tutor.js?v=1794806494';
+import { startTiming, stopTiming, minutesToday, GOAL_MIN } from './timer.js?v=1794806494';
 
 const $ = s => document.querySelector(s);
 const ROLE_KEY = 'math-quest-role';

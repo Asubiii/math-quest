@@ -1,7 +1,7 @@
 // Tutor page: set how much each topic is practiced (its Focus level), and see the student's progress.
 // Every request carries the password; the Google Apps Script checks it before returning anything.
-import { connected, postJSON, today } from './sync.js?v=1794804868';
-import { loadDeck } from './flash.js?v=1794804868';
+import { connected, postJSON, today } from './sync.js?v=1794806494';
+import { loadDeck } from './flash.js?v=1794806494';
 
 const $ = s => document.querySelector(s);
 const PW_KEY = 'math-quest-tutor-pw';
@@ -90,7 +90,7 @@ function render(d, deck) {
   $('#tutor-body').innerHTML = `
     <div class="t-card"><h2>Last two weeks</h2><p class="t-muted small">Goal: 15 minutes each of Speed Study and Flashcards every weekday.</p>${activity}</div>
     <div class="t-card"><h2>Flashcard topics</h2><p class="t-muted small">All topics are always in Victoria's flashcards. Focus (0 to 5) makes a topic come up more often in Flashcards and Speed Study.
-      Each missed or Hard packet question raises it by 1 (by 2 at most per packet), and a clean packet lowers it by 1. Speed Study uses Fractions, Decimals, Conversions, Percents and Geometry.</p>${topics}</div>
+      Each missed or Hard packet question raises it by 1 (by 2 at most per packet), and a clean packet lowers it by 1. Speed Study uses Fractions, Decimals, Conversions, Percents, Geometry and Algebra (word problems).</p>${topics}</div>
     <div class="t-card"><h2>Packet answer sheets</h2>${packets}</div>
     <div class="t-card"><h2>Speed Study</h2>${speed}</div>`;
   $('#tutor-body').querySelectorAll('.focus').forEach(box => box.querySelectorAll('.f-btn').forEach(btn => btn.addEventListener('click', async () => {

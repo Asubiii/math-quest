@@ -1,9 +1,9 @@
 // Saved progress on this device: nickname, speed rank per skill, fact memory (spaced repetition),
 // missed questions to retry, and which monsters have been beaten in which skill.
-import { sk } from './testmode.js?v=1794804868';
+import { sk } from './testmode.js?v=1794806494';
 
 export const GOALS = [60, 45, 35, 28, 22, 17, 13, 10, 8, 6];     // seconds per answer, rank 1..10
-export const GOAL_SCALE = { all: 1, compare: 1, frac2dec: 1, pct: 1, angles: 1.5 }; // angle sums take a step or two of arithmetic
+export const GOAL_SCALE = { all: 1, compare: 1, frac2dec: 1, pct: 1, angles: 1.5, words: 2 }; // angle sums take a step or two; word problems take reading
 export const MAX_RANK = GOALS.length;
 export const goalFor = (skill, rank) => GOALS[Math.min(rank, MAX_RANK) - 1] * GOAL_SCALE[skill];
 export const baseDamage = rank => 10 + 3 * (Math.min(rank, MAX_RANK) - 1);
@@ -15,7 +15,8 @@ const blank = () => ({
   ranks: { all: 1 },
   stars: {},            // monsterId -> ['all'] once beaten
   facts: {},            // fact key -> { box, seen, right, wrong, slow }
-  retry: { compare: [], frac2dec: [], pct: [], angles: [] },
+  retry: { compare: [], frac2dec: [], pct: [], angles: [], words: [] },
+  seenWords: [],        // word-problem sentences already shown, so they aren't repeated
   best: {},             // skill -> { combo, avg }
   fights: 0,
 });
@@ -41,6 +42,8 @@ export function memoryFor(recent) {
       for (let i = 0; i < list.length; i++) { x -= w[i]; if (x <= 0) return list[i]; }
       return list[list.length - 1];
     },
+    seen: t => (save.seenWords || []).includes(t),
+    markSeen(t) { const l = save.seenWords || (save.seenWords = []); l.push(t); if (l.length > 5000) l.splice(0, l.length - 5000); persist(); },
     takeRetry(skill) {
       const q = save.retry[skill];
       if (!q.length || Math.random() > 0.3) return null;
