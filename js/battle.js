@@ -2,7 +2,7 @@
 // Sprite art comes from the Salita project (assets/). Sizes follow the scene height so the
 // layout works from phones to desktops.
 
-import { Fx } from './fx.js?v=1794957524';
+import { Fx } from './fx.js?v=1794957901';
 
 export const MONSTERS = [
   { id: 'duwende', name: 'Goblin', blurb: 'A sneaky miner who guards its gold with a pickaxe.' },

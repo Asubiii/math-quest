@@ -2,8 +2,8 @@
 // (or mix a whole type), tap a bubble, and see right away whether it's right and why.
 // Computation questions also show the setup: what to write above each word, then the equation.
 // Scores for each style are saved on this device.
-import { sk } from './testmode.js?v=1794957524';
-import { TYPES, MODES, make } from './drillbank.js?v=1794957524';
+import { sk } from './testmode.js?v=1794957901';
+import { TYPES, MODES, make } from './drillbank.js?v=1794957901';
 
 const KEY = sk('math-quest-drill-v1');
 const L = 'abcd';
@@ -23,13 +23,12 @@ export function openDrill() { pick = null; menu(); }
 function menu() {
   $('#dr-sub').textContent = 'Barron\'s-style Quantitative questions, new numbers every time.';
   $('#dr-back').hidden = true;
-  $('#dr-body').innerHTML = `<button class="btn primary dr-all" data-mix="all">Mix all Quantitative</button>` + TYPES.map(T => {
-    const ts = typeStat(T);
-    return `<section class="dr-type"><div class="dr-th"><h2>${T.name}</h2><button class="btn small" data-mix="${T.id}">Mix all ${T.modes.length}</button>
-      ${ts.n ? `<span class="dr-ts">${ts.right}/${ts.n} right</span>` : ''}</div>
-      <div class="dr-modes">${T.modes.map(([id, name]) => { const s = stat(id); return `<button class="dr-mode" data-mode="${id}"><span>${name}</span>${s.n ? `<small class="${s.right / s.n >= 0.8 ? 'good' : s.right / s.n < 0.5 ? 'low' : ''}">${pctTxt(s)}</small>` : ''}</button>`; }).join('')}</div></section>`;
-  }).join('');
-  $('#dr-body').querySelectorAll('[data-mode]').forEach(b => b.onclick = () => start({ mode: b.dataset.mode }));
+  // One button per Quantitative question type; each draws from every Barron's style of that type.
+  const EX = { seq: 'In the sequence: 3, 9, 27, 81, . . . , what number should come next?', cmp: 'Examine (A), (B), and (C): 25% of 60, ⅕ of 60, 0.3 × 60',
+    geo: 'Shaded shapes, measuring cups, hourglasses, triangles, slopes', comp: 'What number is 8 more than 20% of 50?' };
+  const btn = (id, name, ex, s) => `<button class="dr-pick" data-mix="${id}"><b>${name}</b><span>${ex}</span>${s.n ? `<small class="${s.right / s.n >= 0.8 ? 'good' : s.right / s.n < 0.5 ? 'low' : ''}">${s.right}/${s.n} right</small>` : ''}</button>`;
+  const all = TYPES.reduce((a, T) => { const s = typeStat(T); return { n: a.n + s.n, right: a.right + s.right }; }, { n: 0, right: 0 });
+  $('#dr-body').innerHTML = `<div class="dr-picks">${TYPES.map(T => btn(T.id, T.name, EX[T.id], typeStat(T))).join('')}${btn('all', 'Mix of all four', 'All four types mixed together', all)}</div>`;
   $('#dr-body').querySelectorAll('[data-mix]').forEach(b => b.onclick = () => start({ mix: b.dataset.mix }));
 }
 
@@ -42,7 +41,7 @@ function pickMode() {
 }
 function title() {
   if (pick.mode) return `${MODES[pick.mode].typeName}: ${MODES[pick.mode].name}`;
-  return pick.mix === 'all' ? 'Mix of all Quantitative' : `${TYPES.find(T => T.id === pick.mix).name}: mixed`;
+  return pick.mix === 'all' ? 'Mix of all four types' : TYPES.find(T => T.id === pick.mix).name;
 }
 function next() { q = make(pickMode()); mine = null; showSetup = false; render(); scrollTo({ top: 0 }); }
 

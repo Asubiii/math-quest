@@ -2,10 +2,10 @@
 // bubble for anything that felt hard); each answer is graded the moment she taps it, with the correct
 // answer, how to solve it, a test strategy and video links. Answers lock once chosen, like the real test.
 // Answers are saved on the device. Days she already did on paper come pre-filled from her graded sheet.
-import { sk, TEST } from './testmode.js?v=1794957524';
-import { queueReport } from './report.js?v=1794957524';
-import { PRACTICE_SYNC } from './config.js?v=1794957524';
-import { today } from './sync.js?v=1794957524';
+import { sk, TEST } from './testmode.js?v=1794957901';
+import { queueReport } from './report.js?v=1794957901';
+import { PRACTICE_SYNC } from './config.js?v=1794957901';
+import { today } from './sync.js?v=1794957901';
 
 const KEY = sk('math-quest-practice-v1');
 const L = 'abcd';

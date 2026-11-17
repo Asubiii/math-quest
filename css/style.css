@@ -396,3 +396,11 @@ body:has(#battle:not([hidden])) .credits { display: none; }
 .dr-steps div:last-child { font-weight: bold; color: #1b5e20; }
 @media (max-width: 520px) { .dr-ann { font-size: 17px; } .tk .an { font-size: 15px; } }
 .tk.qm { margin-left: -6px; }
+.dr-picks { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.dr-pick { font: inherit; color: var(--text); background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; cursor: pointer; text-align: left; display: grid; gap: 6px; transition: transform .12s, border-color .12s; }
+.dr-pick:hover, .dr-pick:focus-visible { transform: translateY(-2px); border-color: rgb(var(--hi)); outline: none; }
+.dr-pick b { font: 400 24px var(--display); color: rgb(var(--hi)); }
+.dr-pick span { font: 400 16px 'Times New Roman', serif; color: var(--muted); }
+.dr-pick small { font-size: 13px; color: var(--muted); }
+.dr-pick small.good { color: var(--good); } .dr-pick small.low { color: var(--bad); }
+.dr-pick[data-mix="all"] { border-color: rgba(var(--hi), .5); }
