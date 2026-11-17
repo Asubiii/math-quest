@@ -2,8 +2,8 @@
 // (or mix a whole type), tap a bubble, and see right away whether it's right and why.
 // Computation questions also show the setup: what to write above each word, then the equation.
 // Scores for each style are saved on this device.
-import { sk } from './testmode.js?v=1794957318';
-import { TYPES, MODES, make } from './quant.js?v=1794957318';
+import { sk } from './testmode.js?v=1794957524';
+import { TYPES, MODES, make } from './drillbank.js?v=1794957524';
 
 const KEY = sk('math-quest-drill-v1');
 const L = 'abcd';

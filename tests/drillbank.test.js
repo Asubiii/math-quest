@@ -1,6 +1,6 @@
 // Generates thousands of questions for every Quantitative drill mode and checks each one:
 // four different choices, no broken values, and for Computation, that the worked steps end on the right answer.
-import { MODES, make } from '../js/quant.js';
+import { MODES, make } from '../js/drillbank.js';
 const plain = s => String(s).replace(/<span class='fr'><span>(.*?)<\/span><span>(.*?)<\/span><\/span>/g, ' $1/$2').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
 let bad = 0; const why = {};
 const note = (m, k, ex) => { bad++; const key = `${m}:${k}`; if (!why[key]) why[key] = ex; };

@@ -1,13 +1,13 @@
 // Entry point: login choice (student or tutor), the student home with its four pages, and the tutor page.
-import { TEST, enterTest, leaveTest } from './testmode.js?v=1794957318';
-import { openSpeed, show } from './main.js?v=1794957318';
-import { state, persist, goalFor } from './progress.js?v=1794957318';
-import { MONSTERS, loadManifest, paintMonster } from './battle.js?v=1794957318';
-import { openFlash, summary, pull, pushNow } from './flash.js?v=1794957318';
-import { openTutor, tutorLogin, tutorLogout, savedPassword } from './tutor.js?v=1794957318';
-import { openPractice, practiceSummary } from './practice.js?v=1794957318';
-import { openDrill, drillSummary } from './drill.js?v=1794957318';
-import { startTiming, stopTiming, minutesToday, GOAL_MIN } from './timer.js?v=1794957318';
+import { TEST, enterTest, leaveTest } from './testmode.js?v=1794957524';
+import { openSpeed, show } from './main.js?v=1794957524';
+import { state, persist, goalFor } from './progress.js?v=1794957524';
+import { MONSTERS, loadManifest, paintMonster } from './battle.js?v=1794957524';
+import { openFlash, summary, pull, pushNow } from './flash.js?v=1794957524';
+import { openTutor, tutorLogin, tutorLogout, savedPassword } from './tutor.js?v=1794957524';
+import { openPractice, practiceSummary } from './practice.js?v=1794957524';
+import { openDrill, drillSummary } from './drill.js?v=1794957524';
+import { startTiming, stopTiming, minutesToday, GOAL_MIN } from './timer.js?v=1794957524';
 
 const $ = s => document.querySelector(s);
 const ROLE_KEY = 'math-quest-role';
