@@ -1,1 +1,1 @@
-{ "name": "math-quest", "private": true, "type": "module", "scripts": { "test": "node tests/questions.test.js" } }
+{ "name": "math-quest", "private": true, "type": "module", "scripts": { "test": "node tests/questions.test.js && node tests/quant.test.js" } }

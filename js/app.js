@@ -1,12 +1,13 @@
-// Entry point: login choice (student or tutor), the student home with its three pages, and the tutor page.
-import { TEST, enterTest, leaveTest } from './testmode.js?v=1794956358';
-import { openSpeed, show } from './main.js?v=1794956358';
-import { state, persist, goalFor } from './progress.js?v=1794956358';
-import { MONSTERS, loadManifest, paintMonster } from './battle.js?v=1794956358';
-import { openFlash, summary, pull, pushNow } from './flash.js?v=1794956358';
-import { openTutor, tutorLogin, tutorLogout, savedPassword } from './tutor.js?v=1794956358';
-import { openPractice, practiceSummary } from './practice.js?v=1794956358';
-import { startTiming, stopTiming, minutesToday, GOAL_MIN } from './timer.js?v=1794956358';
+// Entry point: login choice (student or tutor), the student home with its four pages, and the tutor page.
+import { TEST, enterTest, leaveTest } from './testmode.js?v=1794957318';
+import { openSpeed, show } from './main.js?v=1794957318';
+import { state, persist, goalFor } from './progress.js?v=1794957318';
+import { MONSTERS, loadManifest, paintMonster } from './battle.js?v=1794957318';
+import { openFlash, summary, pull, pushNow } from './flash.js?v=1794957318';
+import { openTutor, tutorLogin, tutorLogout, savedPassword } from './tutor.js?v=1794957318';
+import { openPractice, practiceSummary } from './practice.js?v=1794957318';
+import { openDrill, drillSummary } from './drill.js?v=1794957318';
+import { startTiming, stopTiming, minutesToday, GOAL_MIN } from './timer.js?v=1794957318';
 
 const $ = s => document.querySelector(s);
 const ROLE_KEY = 'math-quest-role';
@@ -49,6 +50,7 @@ async function home() {
     $('#practice-bar').style.width = `${(100 * p.done) / p.total}%`;
     $('#practice-meta').innerHTML = `<b>${p.day}</b>: ${p.done ? `${p.right} / ${p.done} right` : 'not started'}${p.done === p.total ? ' ✓' : ` · ${p.total - p.done} to go`}`;
   });
+  { const d = drillSummary(); $('#drill-meta').innerHTML = d.n ? `<b>${d.right} / ${d.n}</b> right so far` : '90 question styles from the Barron\'s book'; }
   await pull();
   const sm = await summary();
   meter('#flash-bar', '#flash-meta', minutesToday('flash'), sm.topics ? `${sm.due + sm.learn} to review · ${sm.new} new` : 'no topics yet');
@@ -57,6 +59,8 @@ $('#go-speed').addEventListener('click', () => { startTiming('speed'); openSpeed
 $('#go-flash').addEventListener('click', () => { startTiming('flash'); show('flash'); openFlash(); });
 $('#go-practice').addEventListener('click', () => { startTiming('practice'); show('practice'); openPractice(); });
 $('#practice-home').addEventListener('click', home);
+$('#go-drill').addEventListener('click', () => { startTiming('drill'); show('drill'); openDrill(); });
+$('#drill-home').addEventListener('click', home);
 $('#speed-home').addEventListener('click', home);
 $('#flash-home').addEventListener('click', () => { pushNow(); home(); });
 $('#signout').addEventListener('click', () => { if (TEST) return leaveTest(); setRole(null); login(); });

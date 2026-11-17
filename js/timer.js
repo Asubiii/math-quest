@@ -1,8 +1,8 @@
 // Counts active study time per page per day (only while the page is visible and she has
 // touched it in the last 90 seconds) and sends it to the tutor's sheet each minute.
-import { sk } from './testmode.js?v=1794956358';
-import { queueReport } from './report.js?v=1794956358';
-import { today } from './sync.js?v=1794956358';
+import { sk } from './testmode.js?v=1794957318';
+import { queueReport } from './report.js?v=1794957318';
+import { today } from './sync.js?v=1794957318';
 
 const KEY = sk('math-quest-time-v1'), IDLE_MS = 90000, GOAL_MIN = 15;
 let page = null, last = Date.now(), lastInput = Date.now(), unsent = {};

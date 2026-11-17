@@ -10,14 +10,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Nunito:wght@600;700;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=1794956358">
+<link rel="stylesheet" href="css/style.css?v=1794957318">
 </head>
 <body>
 
 <section id="login" class="screen" hidden>
   <div class="card login-card">
     <h1>HSPT Math Prep</h1>
-    <p>HSPT practice: Weekly Practice, Speed Study and Flashcards.</p>
+    <p>HSPT practice: Weekly Practice, Quant Drill, Speed Study and Flashcards.</p>
     <div class="login-choices">
       <button id="login-student" class="btn primary">Student login<small>Victoria</small></button>
       <button id="login-tutor" class="btn">Tutor login</button>
@@ -43,6 +43,11 @@
       <div class="hc-art"><div class="hc-sheet"><i class="f"></i><i></i><i></i><i></i><i class="f"></i><i></i><i></i><i></i><i class="f"></i></div></div>
       <div class="hc-body"><h2>Weekly Practice</h2><p>This week's packet questions. Tap a bubble and see the answer right away.</p>
         <div class="meter"><i id="practice-bar"></i></div><div class="hc-meta" id="practice-meta"></div></div>
+    </button>
+    <button id="go-drill" class="home-card drill">
+      <div class="hc-art"><div class="hc-drill">x<small>= 7 + 4</small></div></div>
+      <div class="hc-body"><h2>Quant Drill</h2><p>Endless Barron's-style Quantitative questions. Pick a question style or mix them.</p>
+        <div class="hc-meta" id="drill-meta"></div></div>
     </button>
     <button id="go-speed" class="home-card speed">
       <div class="hc-art"><div class="portrait" id="home-mon"></div></div>
@@ -76,6 +81,14 @@
   <nav id="pr-tabs" class="pr-tabs" role="tablist" aria-label="Day"></nav>
   <div id="pr-head" class="pr-head"></div>
   <div id="pr-body" class="pr-body"></div>
+</section>
+
+<section id="drill" class="screen" hidden>
+  <header class="topbar">
+    <div><h1>Quant Drill</h1><div class="sub" id="dr-sub"></div></div>
+    <div class="topbar-btns"><button id="dr-back" class="btn" hidden>Styles</button><button id="drill-home" class="btn">Home</button></div>
+  </header>
+  <div id="dr-body" class="dr-body"></div>
 </section>
 
 <section id="tutor" class="screen" hidden>
@@ -170,6 +183,6 @@
 </dialog>
 
 <footer class="credits">Character and monster art from the Salita project. Human character base: Open Peeps by Pablo Stanley (CC0).</footer>
-<script type="module" src="js/app.js?v=1794956358"></script>
+<script type="module" src="js/app.js?v=1794957318"></script>
 </body>
 </html>
