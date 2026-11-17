@@ -1,6 +1,8 @@
-# Math Quest
+# HSPT Math Prep
 
-HSPT practice site with two student pages and a tutor page.
+HSPT practice site with three student pages and a tutor page.
+
+- **Weekly Practice**: the week's packet on screen, one tab per weekday. She taps a bubble to answer (and the Hard bubble for anything that felt hard). Each answer is graded the moment she taps it, with the correct answer, how to solve it, a test strategy and video links. Answers lock once chosen. Days already done on paper come pre-filled from the graded sheet. Add a week with `python3 packets/export_practice.py <monday>` from the tutoring folder.
 
 - **Speed Study**: a mental-math battle game. Every question is multiple choice; fast answers hit harder, and winning a fight raises the Speed Rank, which shortens the timer and brings a stronger monster.
 - **Flashcards**: Anki-style spaced repetition over the HSPT math deck (Anki's default scheduler settings). Only topics the tutor turns on are shown. Progress is saved on the device and copied to the tutor's sheet.

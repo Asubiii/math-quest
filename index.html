@@ -3,21 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Math Quest</title>
-<meta name="description" content="Beat monsters with fast fraction, decimal and percent facts.">
+<title>HSPT Math Prep</title>
+<meta name="description" content="HSPT practice for Victoria: weekly practice packets, Speed Study and flashcards.">
 <meta name="theme-color" content="#181614">
 <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Nunito:wght@600;700;800;900&family=Press+Start+2P&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css?v=1794806494">
+<link rel="stylesheet" href="css/style.css?v=1794956358">
 </head>
 <body>
 
 <section id="login" class="screen" hidden>
   <div class="card login-card">
-    <h1>Math Quest</h1>
-    <p>HSPT practice: Speed Study and Flashcards.</p>
+    <h1>HSPT Math Prep</h1>
+    <p>HSPT practice: Weekly Practice, Speed Study and Flashcards.</p>
     <div class="login-choices">
       <button id="login-student" class="btn primary">Student login<small>Victoria</small></button>
       <button id="login-tutor" class="btn">Tutor login</button>
@@ -34,11 +34,16 @@
 
 <section id="home" class="screen" hidden>
   <header class="topbar">
-    <div><h1>Hi, Victoria!</h1><div class="sub">About 15 minutes on each, every weekday.</div></div>
+    <div><h1>Hi, Victoria!</h1><div class="sub">Every weekday: that day's practice, then about 15 minutes each of Speed Study and Flashcards.</div></div>
     <button id="signout" class="btn small">Sign out</button>
   </header>
   <div class="test-banner" id="test-banner" hidden><b>Test mode.</b> Play as much as you like: this uses a separate save and sends nothing to the sheet. Sign out to leave.</div>
   <div class="home-cards">
+    <button id="go-practice" class="home-card practice">
+      <div class="hc-art"><div class="hc-sheet"><i class="f"></i><i></i><i></i><i></i><i class="f"></i><i></i><i></i><i></i><i class="f"></i></div></div>
+      <div class="hc-body"><h2>Weekly Practice</h2><p>This week's packet questions. Tap a bubble and see the answer right away.</p>
+        <div class="meter"><i id="practice-bar"></i></div><div class="hc-meta" id="practice-meta"></div></div>
+    </button>
     <button id="go-speed" class="home-card speed">
       <div class="hc-art"><div class="portrait" id="home-mon"></div></div>
       <div class="hc-body"><h2>Speed Study</h2><p>Beat monsters with fractions, decimals, percents, angles and word problems.</p>
@@ -63,6 +68,16 @@
   <p class="ak-keys">Keyboard: space shows the answer, then 1 Again · 2 Hard · 3 Good · 4 Easy.</p>
 </section>
 
+<section id="practice" class="screen" hidden>
+  <header class="topbar">
+    <div><h1>Weekly Practice</h1><div class="sub" id="pr-sub"></div></div>
+    <div class="topbar-btns"><select id="pr-week" class="btn" aria-label="Week" hidden></select><button id="practice-home" class="btn">Home</button></div>
+  </header>
+  <nav id="pr-tabs" class="pr-tabs" role="tablist" aria-label="Day"></nav>
+  <div id="pr-head" class="pr-head"></div>
+  <div id="pr-body" class="pr-body"></div>
+</section>
+
 <section id="tutor" class="screen" hidden>
   <header class="topbar">
     <div><h1>Tutor</h1><div class="sub">Victoria's progress and flashcard topics</div></div>
@@ -74,7 +89,7 @@
 <section id="map" class="screen" hidden>
   <header class="topbar">
     <div>
-      <h1>Math Quest</h1>
+      <h1>Speed Study</h1>
       <div class="sub"><span id="hello"></span></div>
     </div>
     <div class="topbar-btns">
@@ -155,6 +170,6 @@
 </dialog>
 
 <footer class="credits">Character and monster art from the Salita project. Human character base: Open Peeps by Pablo Stanley (CC0).</footer>
-<script type="module" src="js/app.js?v=1794806494"></script>
+<script type="module" src="js/app.js?v=1794956358"></script>
 </body>
 </html>

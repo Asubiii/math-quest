@@ -1,6 +1,6 @@
 // Talks to the tutor's Google Sheet (Google Apps Script web app, URL in config.js).
 // Writes that need no answer go through the offline queue in report.js; reads and tutor calls use these.
-import { REPORT_URL as API } from './config.js?v=1794806494';
+import { REPORT_URL as API } from './config.js?v=1794956358';
 
 export const connected = () => !!API;
 

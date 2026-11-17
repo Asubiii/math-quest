@@ -1,10 +1,10 @@
 // Screens and the fight loop.
-import { SKILLS, makeQuestion, pickType } from './questions.js?v=1794806494';
-import { state, persist, goalFor, baseDamage, MAX_RANK, memoryFor, recordAnswer, awardStar } from './progress.js?v=1794806494';
-import { Scene, MONSTERS, BACKDROPS, bgUrl, loadManifest, paintMonster } from './battle.js?v=1794806494';
-import { queueReport, flush } from './report.js?v=1794806494';
-import { flashData } from './flash.js?v=1794806494';
-import { sfx, unlock, isMuted, setMuted } from './sfx.js?v=1794806494';
+import { SKILLS, makeQuestion, pickType } from './questions.js?v=1794956358';
+import { state, persist, goalFor, baseDamage, MAX_RANK, memoryFor, recordAnswer, awardStar } from './progress.js?v=1794956358';
+import { Scene, MONSTERS, BACKDROPS, bgUrl, loadManifest, paintMonster } from './battle.js?v=1794956358';
+import { queueReport, flush } from './report.js?v=1794956358';
+import { flashData } from './flash.js?v=1794956358';
+import { sfx, unlock, isMuted, setMuted } from './sfx.js?v=1794956358';
 
 const $ = s => document.querySelector(s);
 const MODE = 'all', SKILL_ORDER = [MODE]; // one game mode that mixes every question type
@@ -240,7 +240,7 @@ async function endFight(won) {
       <p>Next opponent: <b>${next.name}</b></p>`;
   } else if (won) {
     headline = `${F.mon.name} defeated!`;
-    sub = F.mastered ? '<p>Free play win. Keep that speed sharp!</p>' : `<div class="rankup">Math Quest mastered!</div><p>You beat the final boss at ${fmt(goalFor(MODE, MAX_RANK))} per answer.</p>`;
+    sub = F.mastered ? '<p>Free play win. Keep that speed sharp!</p>' : `<div class="rankup">Speed Study mastered!</div><p>You beat the final boss at ${fmt(goalFor(MODE, MAX_RANK))} per answer.</p>`;
   } else {
     headline = `${F.mon.name} got away…`;
     const wrong = F.log.filter(e => e.result === 'wrong').length, slow = F.log.filter(e => e.late).length;

@@ -1,7 +1,7 @@
 // Tutor page: set how much each topic is practiced (its Focus level), and see the student's progress.
 // Every request carries the password; the Google Apps Script checks it before returning anything.
-import { connected, postJSON, today } from './sync.js?v=1794806494';
-import { loadDeck } from './flash.js?v=1794806494';
+import { connected, postJSON, today } from './sync.js?v=1794956358';
+import { loadDeck } from './flash.js?v=1794956358';
 
 const $ = s => document.querySelector(s);
 const PW_KEY = 'math-quest-tutor-pw';

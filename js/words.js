@@ -6,7 +6,7 @@
 // Levels: 0 = one step ("five less than a number n"), 1 = two steps ("five less than three times
 // a number n", "three times the sum of ..."), 2 = full equations ("... is 20", "three times a number
 // is eight more than the number").
-import { rand, pick, shuffle } from './numbers.js?v=1794806494';
+import { rand, pick, shuffle } from './numbers.js?v=1794956358';
 
 const between = (a, b) => a + rand(b - a + 1);
 const WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];

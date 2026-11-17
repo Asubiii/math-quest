@@ -1,5 +1,5 @@
 /**
- * Math Quest backend: a private Google Sheet that stores Victoria's progress and how much each
+ * HSPT Math Prep backend: a private Google Sheet that stores Victoria's progress and how much each
  * topic should be practiced (its Focus level). The website talks to it through this web app.
  *
  * Setup (once):
@@ -96,7 +96,7 @@ function setFocus(topic, focus, reason) {
 function doGet(e) {
   const action = e && e.parameter && e.parameter.action;
   if (action === 'student') return json({ topics: activeTopics(), focus: focusMap(), bumped: bumpedMap(), flash: getState('flash') });
-  return ContentService.createTextOutput('Math Quest backend is running.');
+  return ContentService.createTextOutput('HSPT Math Prep backend is running.');
 }
 
 function doPost(e) {
@@ -112,6 +112,7 @@ function doPost(e) {
         if (!old || (r.flash.updated || 0) >= (old.updated || 0)) setState('flash', r.flash);
         return json({ ok: true });
       }
+      case 'practice': return json(savePacket(r));
       case 'tutor': return json(tutor(r));
       default: logFight(r); return json({ ok: true });
     }
@@ -136,7 +137,13 @@ function tutor(r) {
   // A graded answer sheet: one row per question. Each missed or Hard question raises its topic's Focus
   // by 1 (2 if both), so it comes up more often; a topic answered cleanly in this packet drops by 1.
   // Re-sending the same day's sheet replaces it instead of counting twice.
-  if (r.op === 'packet') {
+  if (r.op === 'packet') return savePacket(r);
+  return { ok: false, error: 'unknown op' };
+}
+
+// A graded day (paper answer sheet, or a finished Weekly Practice day sent from the site).
+function savePacket(r) {
+  {
     const sh = sheet('Packets');
     const old = sh.getDataRange().getValues();
     for (let i = old.length - 1; i >= 1; i--) if (cell(old[i][0]).slice(0, 10) === String(r.date).slice(0, 10)) sh.deleteRow(i + 1);
@@ -160,7 +167,6 @@ function tutor(r) {
     }
     return { ok: true, saved: out.length, focus: changes };
   }
-  return { ok: false, error: 'unknown op' };
 }
 
 function logFight(r) {
@@ -186,10 +192,10 @@ function weeklyEmail() {
   const time = rows('Time').filter(r => inWeek(r[0])), reviews = rows('Reviews').filter(r => inWeek(r[0]));
   const packets = rows('Packets').filter(r => inWeek(r[0])), fights = rows('Fights').filter(r => inWeek(r[0]));
   const mins = p => Math.round(time.filter(r => r[1] === p).reduce((a, r) => a + Number(r[2]), 0) / 60);
-  const lines = ['Math Quest: last 7 days', '',
+  const lines = ['HSPT Math Prep: last 7 days', '',
     `Speed Study: ${mins('speed')} min, ${fights.length} fights`,
     `Flashcards: ${mins('flash')} min, ${reviews.length} cards reviewed`,
     `Packets: ${packets.filter(r => r[7] === 'right').length}/${packets.length} right, ${packets.filter(r => r[8] === 'yes').length} marked hard`,
     '', `Flashcard topics on: ${activeTopics().join(', ') || 'none'}`, '', book().getUrl()];
-  MailApp.sendEmail(Session.getEffectiveUser().getEmail(), 'Math Quest weekly summary', lines.join('\n'));
+  MailApp.sendEmail(Session.getEffectiveUser().getEmail(), 'HSPT Math Prep weekly summary', lines.join('\n'));
 }
