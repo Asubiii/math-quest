@@ -6,6 +6,7 @@
 // "more than" -> +, "20% of 50" -> 10), the equation that makes, and the steps to solve it.
 
 // ---------------------------------------------------------------- random
+import { check } from './answercheck.js?v=1794958762';
 export const R = {
   random: Math.random,
   randint: (a, b) => a + Math.floor(Math.random() * (b - a + 1)),
@@ -282,12 +283,20 @@ function s_mixops(r) {
   const wrong = [V(back) > 0 ? back : s[4].add(3), nxt.mul(2).add(1), nxt.add(ops[1][0] === '+' ? ops[1][1] : 1)];
   return seqQ(r, s.slice(0, 5), r.choice(NEXT), nxt, wrong, `The pattern is ${name}, ${name} …; next is ${num(nxt)}.`);
 }
+// Two steps taking turns (+3, +9, +3, +9) or two series each adding its own amount.
+function fitsTwoStep(t) {
+  const d = t.slice(1).map((v, i) => v - t[i]);
+  const ar = u => u.slice(1).every((v, k) => v - u[k] === u[1] - u[0]);
+  return d.every((v, i) => v === d[i % 2]) || [0, 1].every(j => ar(t.filter((_, k) => k % 2 === j)));
+}
 function s_wrong(r) {
   const p = r.randint(1, 4), q = r.choice([8, 9, 10, 11]), s = [r.randint(5, 30)];
   for (let i = 0; i < 5; i++) s.push(s[s.length - 1] + (i % 2 === 0 ? p : q));
   const i = r.randint(2, 4), bad = s[i] + r.choice([1, -1, 2]), shown = [...s.slice(0, i), bad, ...s.slice(i + 1)];
-  return Q('Sequences', `In the sequence ${shown.join(', ')}, . . . , one number is wrong. That number should be`,
-    opts(s[i], [bad + 2 !== s[i] ? bad + 2 : bad - 3, s[i] + q - p, s[i] - 2 !== bad ? s[i] - 2 : s[i] + 4], num), `The pattern is +${p}, +${q}; ${bad} should be ${s[i]}.`);
+  const ch = opts(s[i], [bad + 2 !== s[i] ? bad + 2 : bad - 3, s[i] + q - p, s[i] - 2 !== bad ? s[i] - 2 : s[i] + 4], num);
+  // A wrong choice must not fix the sequence some other way (21, 22, 31, 33, 41, 44 is two series: +10 and +11).
+  for (const w of ch.slice(1)) for (let j = 0; j < shown.length; j++) need(!fitsTwoStep(shown.map((v, k) => (k === j ? +w : v))));
+  return Q('Sequences', `In the sequence ${shown.join(', ')}, . . . , one number is wrong. That number should be`, ch, `The pattern is +${p}, +${q}; ${bad} should be ${s[i]}.`);
 }
 function s_every_other(r) {
   const a = r.randint(2, 12), d = r.randint(2, 6); let b = r.randint(2, 14); const e = r.randint(2, 5); if (a === b) b += 3;
@@ -410,8 +419,9 @@ function s_pairmult(r) {
     const k = r.choice([3, 4, 6, 7, 8, 9, 11]), n = r.randint(2, 6), d = r.choice([1, 2, 3]); const s = []; for (let i = 0; i < 3; i++) s.push(n + d * i, k * (n + d * i));
     return seqQ(r, s.slice(0, 5), r.choice(NEXT), s[5], [s[4] + d, s[3] + k, s[5] + k], `Each number is followed by ${k} times itself: ${s[4]} × ${k} = ${s[5]}.`);
   }
-  const a = r.randint(40, 90), da = r.choice([3, 4, 5, 6, 7]), b = r.randint(2, 5); const s = []; for (let i = 0; i < 3; i++) s.push(a - da * i, b * 2 ** i);
-  return seqQ(r, s.slice(0, 5), r.choice(NEXT), s[5], [s[4] - da, 3 * b, 8 * b], `Two sequences take turns: ${s[0]}, ${s[2]}, ${s[4]} (− ${da}) and ${s[1]}, ${s[3]}, … (× 2); next is ${s[5]}.`);
+  // Seven terms, so the × 2 series shows three numbers (3, 6, 12): with only 3, 6 it could be + 3 or × 2.
+  const a = r.randint(40, 90), da = r.choice([3, 4, 5, 6, 7]), b = r.randint(2, 5); const s = []; for (let i = 0; i < 4; i++) s.push(a - da * i, b * 2 ** i);
+  return seqQ(r, s.slice(0, 7), r.choice(NEXT), s[7], [s[6] - da, 6 * b, 5 * b], `Two sequences take turns: ${s[0]}, ${s[2]}, ${s[4]}, ${s[6]} (− ${da}) and ${s[1]}, ${s[3]}, ${s[5]} (× 2); next is ${s[7]}.`);
 }
 function s_ln_hard(r) {
   const kind = r.choice(['mult', 'altnum', 'half', 'plus_times']);
@@ -1055,7 +1065,9 @@ export function make(modeId) {
   for (let tries = 0; tries < 60; tries++) {
     try {
       const q = m.fn(R), order = R.shuffle([0, 1, 2, 3]);
-      return { ...q, mode: modeId, choices: order.map(i => q.choices[i]), ans: 'abcd'[order.indexOf(0)] };
+      const out = { ...q, mode: modeId, choices: order.map(i => q.choices[i]), ans: 'abcd'[order.indexOf(0)] };
+      if (check(out, m.type)) continue;      // re-solved from the printed words and the key didn't hold up: make another
+      return out;
     } catch (e) { if (!(e instanceof Retry)) throw e; }
   }
   throw new Error(`${modeId}: could not make a question`);

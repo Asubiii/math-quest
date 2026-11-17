@@ -1,10 +1,10 @@
 // Screens and the fight loop.
-import { SKILLS, makeQuestion, pickType } from './questions.js?v=1794957901';
-import { state, persist, goalFor, baseDamage, MAX_RANK, memoryFor, recordAnswer, awardStar } from './progress.js?v=1794957901';
-import { Scene, MONSTERS, BACKDROPS, bgUrl, loadManifest, paintMonster } from './battle.js?v=1794957901';
-import { queueReport, flush } from './report.js?v=1794957901';
-import { flashData } from './flash.js?v=1794957901';
-import { sfx, unlock, isMuted, setMuted } from './sfx.js?v=1794957901';
+import { SKILLS, makeQuestion, pickType } from './questions.js?v=1794958762';
+import { state, persist, goalFor, baseDamage, MAX_RANK, memoryFor, recordAnswer, awardStar } from './progress.js?v=1794958762';
+import { Scene, MONSTERS, BACKDROPS, bgUrl, loadManifest, paintMonster } from './battle.js?v=1794958762';
+import { queueReport, flush } from './report.js?v=1794958762';
+import { flashData } from './flash.js?v=1794958762';
+import { sfx, unlock, isMuted, setMuted } from './sfx.js?v=1794958762';
 
 const $ = s => document.querySelector(s);
 const MODE = 'all', SKILL_ORDER = [MODE]; // one game mode that mixes every question type

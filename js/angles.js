@@ -2,7 +2,7 @@
 // triangle angle sums, right and isosceles triangles, exterior angles and parallel lines.
 // Each question draws its figure to scale as an SVG.
 
-import { rand, pick, shuffle } from './numbers.js?v=1794957901';
+import { rand, pick, shuffle } from './numbers.js?v=1794958762';
 
 const between = (a, b) => a + rand(b - a + 1);
 const rad = d => d * Math.PI / 180;

@@ -1,6 +1,6 @@
 // Saved progress on this device: nickname, speed rank per skill, fact memory (spaced repetition),
 // missed questions to retry, and which monsters have been beaten in which skill.
-import { sk } from './testmode.js?v=1794957901';
+import { sk } from './testmode.js?v=1794958762';
 
 export const GOALS = [60, 45, 35, 28, 22, 17, 13, 10, 8, 6];     // seconds per answer, rank 1..10
 export const GOAL_SCALE = { all: 1, compare: 1, frac2dec: 1, pct: 1, angles: 1.5, words: 2 }; // angle sums take a step or two; word problems take reading

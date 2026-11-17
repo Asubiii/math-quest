@@ -1,1 +1,1 @@
-{ "name": "math-quest", "private": true, "type": "module", "scripts": { "test": "node tests/questions.test.js && node tests/drillbank.test.js" } }
+{ "name": "math-quest", "private": true, "type": "module", "scripts": { "test": "node tests/questions.test.js && node tests/drillbank.test.js && node tests/answers.test.js" } }
