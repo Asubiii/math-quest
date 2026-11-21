@@ -23,6 +23,7 @@ const SHEETS = {
   Fights: ['Time', 'Player', 'Skill', 'Speed rank', 'Goal (s)', 'Monster', 'Result', 'Questions', 'Correct', 'On time', 'Criticals',
     'Accuracy', 'Median (s)', 'Average (s)', 'Best combo', 'Rank after', 'Ranked up', 'Fight length (s)', 'Free play', 'Device'],
   Answers: ['Time', 'Player', 'Question type', 'Speed rank', 'Question', 'Correct answer', 'Her answer', 'Result', 'Mistake type', 'Seconds', 'Goal (s)'],
+  Drill: ['Time', 'Question type', 'Style', 'Question', 'Correct answer', 'Her answer', 'Result', 'Seconds', 'Looked at setup'],
   State: ['Key', 'Value', 'Updated'],
 };
 const TOPICS = ['Fractions', 'Decimals', 'Conversions', 'Units', 'Ratios', 'Percents', 'Number Theory', 'Operations', 'Exponents',
@@ -32,6 +33,9 @@ const TOPICS = ['Fractions', 'Decimals', 'Conversions', 'Units', 'Ratios', 'Perc
 // from the class practice tests (Isaac, Nov 2026): sequences, algebra word problems, comparisons.
 const START_FOCUS = { Sequences: 2, Algebra: 2, Operations: 2, Fractions: 1, Percents: 1, Decimals: 1 };
 const MAX_FOCUS = 5;
+// The website checks this before sending Quant Drill answers and in-progress practice days,
+// so an older deployment never receives records it would misfile as fights.
+const VERSION = 2;
 
 function setup() {
   const ss = book();
@@ -95,6 +99,7 @@ function setFocus(topic, focus, reason) {
 
 function doGet(e) {
   const action = e && e.parameter && e.parameter.action;
+  if (action === 'version') return json({ version: VERSION });
   if (action === 'student') return json({ topics: activeTopics(), focus: focusMap(), bumped: bumpedMap(), flash: getState('flash') });
   return ContentService.createTextOutput('HSPT Math Prep backend is running.');
 }
@@ -113,6 +118,7 @@ function doPost(e) {
         return json({ ok: true });
       }
       case 'practice': return json(savePacket(r));
+      case 'drill': return json(saveDrill(r));
       case 'tutor': return json(tutor(r));
       default: logFight(r); return json({ ok: true });
     }
@@ -132,6 +138,7 @@ function tutor(r) {
     return {
       ok: true, topics: rows('Topics').map(t => ({ topic: t[0], active: t[1] === true, focus: Number(t[2]) || 0, reason: t[3], updated: t[4] })),
       flash: getState('flash'), reviews: rows('Reviews', 4000), time: rows('Time', 3000), packets: rows('Packets', 1500), fights,
+      drill: rows('Drill', 3000),
     };
   }
   // A graded answer sheet: one row per question. Each missed or Hard question raises its topic's Focus
@@ -150,7 +157,7 @@ function savePacket(r) {
     const out = (r.rows || []).map(q => [clean(r.date), clean(r.day), clean(q.section || r.section), q.q, clean(q.topic), clean(q.answer || ''), clean(q.correct), clean(q.result), q.hard ? 'yes' : '']);
     if (out.length) sh.getRange(sh.getLastRow() + 1, 1, out.length, out[0].length).setValues(out);
     const done = getState('packetsCounted') || {}, focus = focusMap(), bumped = bumpedMap(), changes = {};
-    if (!done[r.date]) {
+    if (!done[r.date] && !r.partial) { // an unfinished day shows its answers but changes no Focus yet
       const up = {}, seen = new Set();
       (r.rows || []).forEach(q => {
         if (!TOPICS.includes(q.topic)) return;
@@ -167,6 +174,14 @@ function savePacket(r) {
     }
     return { ok: true, saved: out.length, focus: changes };
   }
+}
+
+// Quant Drill answers, one row each.
+function saveDrill(r) {
+  const out = (r.answers || []).slice(0, 200).map(a => [new Date(a.time || Date.now()), clean(a.type), clean(a.style), clean(a.q), clean(a.correct),
+    clean(a.chosen), clean(a.result), Number(a.sec) || 0, a.setup ? 'yes' : '']);
+  if (out.length) { const sh = sheet('Drill'); sh.getRange(sh.getLastRow() + 1, 1, out.length, out[0].length).setValues(out); }
+  return { ok: true, saved: out.length };
 }
 
 function logFight(r) {

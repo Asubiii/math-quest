@@ -6,7 +6,7 @@
 // "more than" -> +, "20% of 50" -> 10), the equation that makes, and the steps to solve it.
 
 // ---------------------------------------------------------------- random
-import { check } from './answercheck.js?v=1794958762';
+import { check } from './answercheck.js?v=1795219928';
 export const R = {
   random: Math.random,
   randint: (a, b) => a + Math.floor(Math.random() * (b - a + 1)),

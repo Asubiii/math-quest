@@ -1,7 +1,7 @@
 // Tutor page: set how much each topic is practiced (its Focus level), and see the student's progress.
 // Every request carries the password; the Google Apps Script checks it before returning anything.
-import { connected, postJSON, today } from './sync.js?v=1794958762';
-import { loadDeck } from './flash.js?v=1794958762';
+import { connected, postJSON, today } from './sync.js?v=1795219928';
+import { loadDeck } from './flash.js?v=1795219928';
 
 const $ = s => document.querySelector(s);
 const PW_KEY = 'math-quest-tutor-pw';
@@ -52,8 +52,11 @@ function render(d, deck) {
   const mins = (day, page) => Math.round(d.time.filter(r => asDay(r[0]) === day && r[1] === page).reduce((a, r) => a + Number(r[2] || 0), 0) / 60);
   const pk = day => { const rows = d.packets.filter(r => asDay(r[0]) === day); if (!rows.length) return '–'; const right = rows.filter(r => r[7] === 'right').length; return `${right}/${rows.length}`; };
   const reviewsOn = day => d.reviews.filter(r => asDay(r[0]) === day).length;
-  const activity = `<table class="t-table"><tr><th>Day</th><th>Speed Study</th><th>Flashcards</th><th>Cards reviewed</th><th>Packet</th></tr>
-    ${days.map(x => { const s = mins(x, 'speed'), f = mins(x, 'flash'); return `<tr><td>${dayName(x)}</td><td class="${s >= 15 ? 'ok' : s ? 'part' : ''}">${s} min</td><td class="${f >= 15 ? 'ok' : f ? 'part' : ''}">${f} min</td><td>${reviewsOn(x)}</td><td>${pk(x)}</td></tr>`; }).join('')}</table>`;
+  const drill = d.drill || [];
+  const drillOn = day => { const r = drill.filter(x => asDay(x[0]) === day); return r.length ? `${r.filter(x => x[6] === 'right').length}/${r.length}` : '–'; };
+  const minCell = (m, goal) => `<td class="${goal && m >= goal ? 'ok' : m ? 'part' : ''}">${m} min</td>`;
+  const activity = `<table class="t-table"><tr><th>Day</th><th>Speed Study</th><th>Flashcards</th><th>Cards reviewed</th><th>Weekly Practice</th><th>Packet</th><th>Quant Drill</th><th>Drill right</th></tr>
+    ${days.map(x => `<tr><td>${dayName(x)}</td>${minCell(mins(x, 'speed'), 15)}${minCell(mins(x, 'flash'), 15)}<td>${reviewsOn(x)}</td>${minCell(mins(x, 'practice'))}<td>${pk(x)}</td>${minCell(mins(x, 'drill'))}<td>${drillOn(x)}</td></tr>`).join('')}</table>`;
 
   // Topics with stats, highest Focus first
   const focusOf = t => Number((on.get(t) || {}).focus) || 0;
@@ -87,11 +90,23 @@ function render(d, deck) {
     ${fights.map(f => `<tr><td>${dayName(asDay(f[0]))}</td><td>${f[1]}</td><td>${esc(f[2])}</td><td>${f[4]}/${f[3]}</td><td>${Number(f[5]).toFixed(1)}s</td></tr>`).join('')}</table>`
     : '<p class="t-muted">No Speed Study fights yet.</p>';
 
+  // Quant Drill: accuracy by question type (last 14 days), then the latest misses
+  const since = days[days.length - 1] || today();
+  const recentDrill = drill.filter(x => asDay(x[0]) >= since);
+  const byType = {};
+  recentDrill.forEach(x => { const t = byType[x[1]] = byType[x[1]] || { n: 0, right: 0, sec: 0 }; t.n++; t.sec += Number(x[7]) || 0; if (x[6] === 'right') t.right++; });
+  const misses = drill.filter(x => x[6] !== 'right').slice(-10).reverse();
+  const drillCard = drill.length ? `<table class="t-table"><tr><th>Type (last 2 weeks)</th><th>Right</th><th>Avg time</th></tr>
+    ${Object.entries(byType).map(([t, v]) => `<tr><td>${esc(t)}</td><td class="${v.right / v.n >= 0.8 ? 'ok' : 'part'}">${v.right}/${v.n}</td><td>${(v.sec / v.n).toFixed(0)}s</td></tr>`).join('') || '<tr><td colspan="3" class="t-muted">Nothing in the last two weeks.</td></tr>'}</table>
+    ${misses.length ? `<h3>Latest misses</h3><ul class="t-miss">${misses.map(x => `<li>${dayName(asDay(x[0]))} · ${esc(x[2])} · ${esc(x[3])} · answered ${esc(x[5])}, correct ${esc(x[4])}${x[8] === 'yes' ? ' · looked at setup' : ''}</li>`).join('')}</ul>` : ''}`
+    : '<p class="t-muted">No Quant Drill answers yet.</p>';
+
   $('#tutor-body').innerHTML = `
-    <div class="t-card"><h2>Last two weeks</h2><p class="t-muted small">Goal: 15 minutes each of Speed Study and Flashcards every weekday.</p>${activity}</div>
+    <div class="t-card"><h2>Last two weeks</h2><p class="t-muted small">Goal: 15 minutes each of Speed Study and Flashcards every weekday.</p><div class="t-scroll">${activity}</div></div>
     <div class="t-card"><h2>Flashcard topics</h2><p class="t-muted small">All topics are always in Victoria's flashcards. Focus (0 to 5) makes a topic come up more often in Flashcards and Speed Study.
       Each missed or Hard packet question raises it by 1 (by 2 at most per packet), and a clean packet lowers it by 1. Speed Study uses Fractions, Decimals, Conversions, Percents, Geometry and Algebra (word problems).</p>${topics}</div>
     <div class="t-card"><h2>Packet answer sheets</h2>${packets}</div>
+    <div class="t-card"><h2>Quant Drill</h2>${drillCard}</div>
     <div class="t-card"><h2>Speed Study</h2>${speed}</div>`;
   $('#tutor-body').querySelectorAll('.focus').forEach(box => box.querySelectorAll('.f-btn').forEach(btn => btn.addEventListener('click', async () => {
     const val = box.querySelector('.f-val'), btns = box.querySelectorAll('.f-btn'), before = Number(val.textContent);

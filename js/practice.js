@@ -2,10 +2,10 @@
 // bubble for anything that felt hard); each answer is graded the moment she taps it, with the correct
 // answer, how to solve it, a test strategy and video links. Answers lock once chosen, like the real test.
 // Answers are saved on the device. Days she already did on paper come pre-filled from her graded sheet.
-import { sk, TEST } from './testmode.js?v=1794958762';
-import { queueReport } from './report.js?v=1794958762';
-import { PRACTICE_SYNC } from './config.js?v=1794958762';
-import { today } from './sync.js?v=1794958762';
+import { sk, TEST } from './testmode.js?v=1795219928';
+import { queueReport } from './report.js?v=1795219928';
+import { PRACTICE_SYNC } from './config.js?v=1795219928';
+import { today } from './sync.js?v=1795219928';
 
 const KEY = sk('math-quest-practice-v1');
 const L = 'abcd';
@@ -150,21 +150,23 @@ function choose(n, a) {
 function toggleHard(n) {
   const day = week.days[dayIdx], m = marks(day);
   m[n] = { ...(m[n] || { a: '' }), h: !(m[n] && m[n].h) };
-  save(); rerenderQ(n); if (score(day).done === score(day).total) maybeSend(day, true);
+  save(); rerenderQ(n); maybeSend(day, true);
 }
 
-// When a whole day is answered, send it to the tutor's sheet like a graded answer sheet
-// (raises the Focus of missed and Hard topics). Re-sending a day replaces it there.
+// Each answer updates that day in the tutor's sheet, so progress shows while she works.
+// An unfinished day only lists the questions answered so far and changes no Focus; once the whole
+// day is answered it is sent like a graded answer sheet (raises the Focus of missed and Hard topics).
+// Re-sending a day replaces it there.
 function maybeSend(day, again = false) {
   const s = score(day);
-  if (TEST || !PRACTICE_SYNC || s.done < s.total || s.paper) return;
-  const w = saved[week.week], sentKey = `${day.day}#sent`;
-  if (w[sentKey] && !again) return;
+  if (TEST || !PRACTICE_SYNC || s.paper || !s.done) return;
+  const w = saved[week.week], sentKey = `${day.day}#sent`, partial = s.done < s.total;
+  if (!partial && w[sentKey] && !again) return;
   const m = marks(day);
-  const rows = questions(day).map(q => {
+  const rows = questions(day).filter(q => !partial || (m[q.n] && m[q.n].a)).map(q => {
     const a = (m[q.n] && m[q.n].a) || '';
     return { n: q.n, q: q.n, section: q.section, topic: q.topic, answer: a, correct: q.fb.ans, result: !a ? 'blank' : a === q.fb.ans ? 'right' : 'wrong', hard: !!(m[q.n] && m[q.n].h) };
   });
-  queueReport({ action: 'practice', date: day.date, day: day.day, rows });
-  w[sentKey] = Date.now(); save();
+  queueReport({ action: 'practice', needs: 2, key: `practice:${day.date}`, date: day.date, day: day.day, partial, rows });
+  if (!partial) { w[sentKey] = Date.now(); save(); }
 }

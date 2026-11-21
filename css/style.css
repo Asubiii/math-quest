@@ -276,6 +276,8 @@ body:has(#battle:not([hidden])) .credits { display: none; }
 .t-table { border-collapse: collapse; width: 100%; font-size: 14px; margin-top: 8px; }
 .t-table th { text-align: left; font-size: 12px; color: var(--muted); padding: 6px 8px; }
 .t-table td { padding: 7px 8px; border-top: 1px solid var(--line); vertical-align: top; }
+.t-scroll { overflow-x: auto; } .t-scroll .t-table td, .t-scroll .t-table th { white-space: nowrap; }
+.t-miss { margin: 6px 0 0; padding-left: 18px; font-size: 14px; } .t-miss li { margin: 4px 0; }
 .t-table td.ok { color: var(--good); } .t-table td.part { color: #ffd76a; }
 .t-pk { padding: 10px 0; border-top: 1px solid var(--line); } .t-pk:first-of-type { border-top: 0; }
 .t-pk ul { margin: 6px 0 0; padding-left: 18px; font-size: 14px; font-weight: 600; color: var(--muted); }

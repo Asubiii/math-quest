@@ -2,9 +2,9 @@
 // A question: { skill, key, prompt (HTML), promptText, choices:[{html,text,correct,tag}], layout, tip (HTML) }
 // Wrong choices carry a `tag` naming the mistake they represent, which goes to the tutor report.
 
-import { words } from './words.js?v=1794958762';
-import { angles } from './angles.js?v=1794958762';
-import { R, val, eq, cmp, mul, key, decStr, pctStr, fracHTML, fracText, terminates, rand, pick, shuffle } from './numbers.js?v=1794958762';
+import { words } from './words.js?v=1795219928';
+import { angles } from './angles.js?v=1795219928';
+import { R, val, eq, cmp, mul, key, decStr, pctStr, fracHTML, fracText, terminates, rand, pick, shuffle } from './numbers.js?v=1795219928';
 
 // topics: the flashcard topics each question type practices. A topic's Focus level (raised when she
 // misses a packet question or marks it Hard) makes the matching question type come up more often.

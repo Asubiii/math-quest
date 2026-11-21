@@ -2,8 +2,9 @@
 // (or mix a whole type), tap a bubble, and see right away whether it's right and why.
 // Computation questions also show the setup: what to write above each word, then the equation.
 // Scores for each style are saved on this device.
-import { sk } from './testmode.js?v=1794958762';
-import { TYPES, MODES, make } from './drillbank.js?v=1794958762';
+import { sk } from './testmode.js?v=1795219928';
+import { TYPES, MODES, make } from './drillbank.js?v=1795219928';
+import { queueReport } from './report.js?v=1795219928';
 
 const KEY = sk('math-quest-drill-v1');
 const L = 'abcd';
@@ -12,7 +13,7 @@ let data = (() => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } 
 data.modes = data.modes || {};
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(data)); } catch { /* ignore */ } };
 
-let pick = null, q = null, mine = null, showSetup = false, run = { n: 0, right: 0, streak: 0 };
+let pick = null, q = null, mine = null, showSetup = false, shownAt = 0, run = { n: 0, right: 0, streak: 0 };
 
 const stat = id => data.modes[id] || { n: 0, right: 0 };
 const pctTxt = s => (s.n ? `${s.right}/${s.n}` : '');
@@ -43,7 +44,7 @@ function title() {
   if (pick.mode) return `${MODES[pick.mode].typeName}: ${MODES[pick.mode].name}`;
   return pick.mix === 'all' ? 'Mix of all four types' : TYPES.find(T => T.id === pick.mix).name;
 }
-function next() { q = make(pickMode()); mine = null; showSetup = false; render(); scrollTo({ top: 0 }); }
+function next() { q = make(pickMode()); mine = null; showSetup = false; shownAt = Date.now(); render(); scrollTo({ top: 0 }); }
 
 // The question with each piece's annotation written above it.
 function setupHTML(s) {
@@ -92,6 +93,11 @@ function answer(a) {
   st.n++; if (ok) st.right++;
   run.n++; if (ok) { run.right++; run.streak++; } else run.streak = 0;
   save(); render();
+  const txt = h => { const d = document.createElement('div'); d.innerHTML = h || ''; return d.textContent.replace(/\s+/g, ' ').trim(); };
+  const m = MODES[q.mode], choice = l => `(${l}) ${txt(q.choices[L.indexOf(l)])}`;
+  queueReport({ action: 'drill', needs: 2, answers: [{ time: new Date().toISOString(), type: m.typeName, style: m.name,
+    q: txt(q.stem) + (q.fig ? ' [figure]' : ''), correct: choice(q.ans), chosen: choice(a), result: ok ? 'right' : 'wrong',
+    sec: +((Date.now() - shownAt) / 1000).toFixed(1), setup: showSetup }] });
 }
 
 $('#dr-back').addEventListener('click', () => { pick = null; menu(); scrollTo({ top: 0 }); });
